@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>XITLOG - xit is coming</title>
+<style>
+html {
+  background-color: rgba(0, 50, 70, 1.0);
+  color: rgba(200, 200, 200, 1.0);
+}
+
+@font-face {
+  font-family: '3270';
+  src: url('term.ttf') format('truetype');
+}
+
+#grid {
+  font-family: '3270', monospace;
+  white-space: pre;
+  font-size: 22px;
+  line-height: 22px;
+}
+
+#grid a {
+  color: white;
+}
+</style>
+</head>
+<body>
+<div id="grid">                                                                                
+ <a href='index.html'>← HOME</a>                                     <a href='feed.xml'>RSS</a>                             
+                                                                                
+ ██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗                                  
+ ╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝                                  
+  ╚███╔╝ ██║   ██║   ██║     ██║   ██║██║  ███╗                                 
+  ██╔██╗ ██║   ██║   ██║     ██║   ██║██║   ██║                                 
+ ██╔╝ ██╗██║   ██║   ███████╗╚██████╔╝╚██████╔╝                                 
+ ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝                                  
+                                                                                
+                                                                                
+                                                                                
+ XIT IS COMING - March 4, 2025                                                  
+                                                                                
+   I'm working on a new version control system called <a href='https://github.com/radarroark/xit'>xit</a>                     
+ (pronounced like "zit"). To paraphrase JFK: I do this not                      
+ because it is easy...but because I thought it would be easy.                   
+ It is hilarious how much I misjudged how hard this would be.                   
+ Nonetheless, here are the main features:                                       
+                                                                                
+   1. Compatible with git hosts. You can push/pull/clone with                   
+ Github and other git hosts, and nobody will even know you're                   
+ using xit. I spent all of this past winter implementing the                    
+ git protocol, and contrary to popular belief I am not                          
+ perfect, so PLEASE REPORT BUGS!                                                
+                                                                                
+   2. Combine snapshot-based and patch-based version control.                   
+ When you merge or cherry-pick with xit, it uses patch-based                    
+ merging, which should be more reliable and lead to fewer                       
+ merge conflicts than git's three-way merge. Once again,                        
+ until it sees more real-world use you should temper                            
+ expectations.                                                                  
+                                                                                
+   3. Built-in text user interface (TUI). If you just launch                    
+ `xit` in a repo with no extra arguments, it will launch a                      
+ TUI where you can browse commits and view the status of all                    
+ uncommitted changes. Eventually the TUI will expose *all*                      
+ the functionality of xit, including making commits and                         
+ performing merges, but I'm not quite there yet.                                
+                                                                                
+   4. Store large/binary files efficiently. Internally, xit                     
+ stores objects in a completely different way than git does.                    
+ It uses FastCDC to break up files into chunks, somewhat like                   
+ BitTorrent except the chunks are variable sized. The goal is                   
+ to be excellent at storing large, binary files, so we never                    
+ need an add-on like git LFS.                                                   
+                                                                                
+   5. Universal undo. Any change to the repo will be                            
+ undoable. Yes, I mean *any* change. That includes not just                     
+ changes to refs (as shown in git's reflog) but also changes                    
+ to the index, the config, and so on. I'm still working on                      
+ this feature so it's not available yet. It should land soon,                   
+ but for now, it's vaporware.                                                   
+                                                                                
+   Git's 20th birthday is in April 2025. So much has changed                    
+ in those two decades, and we need a tool that is free from                     
+ the design limitations and technical debt that has accrued                     
+ in git. If all goes well, xit will celebrate its 20th                          
+ birthday in 2045 as an old incumbent being challenged by a                     
+ newcomer.                                                                      
+                                                                                
+   If that day comes, I'll do my best to sabotage the                           
+ newcomer's attempt to unseat me from the throne...just                         
+ kidding, of course. I'll nod sagely in my bathrobe with a                      
+ beverage in hand and continue not caring.                                      
+                                                                                
+                                                                                
+</div>
+</body>
+</html>
