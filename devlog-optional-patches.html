@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>XITLOG - devlog optional patches</title>
+<style>
+html {
+  background-color: rgba(0, 50, 70, 1.0);
+  color: rgba(200, 200, 200, 1.0);
+}
+
+@font-face {
+  font-family: '3270';
+  src: url('term.ttf') format('truetype');
+}
+
+#grid {
+  font-family: '3270', monospace;
+  white-space: pre;
+  font-size: 22px;
+  line-height: 22px;
+}
+
+#grid a {
+  color: white;
+}
+</style>
+</head>
+<body>
+<div id="grid">                                                                                
+ <a href='index.html'>← HOME</a> - a blog about <a href='https://github.com/radarroark/xit'>xit</a>                <a href='feed.xml'>RSS</a>                             
+                                                                                
+ ██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗                                  
+ ╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝                                  
+  ╚███╔╝ ██║   ██║   ██║     ██║   ██║██║  ███╗                                 
+  ██╔██╗ ██║   ██║   ██║     ██║   ██║██║   ██║                                 
+ ██╔╝ ██╗██║   ██║   ███████╗╚██████╔╝╚██████╔╝                                 
+ ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝                                  
+                                                                                
+                                                                                
+                                                                                
+ DEVLOG - OPTIONAL PATCHES, FORCE PUSH, SYMLINKS AND MORE -                     
+ March 13, 2025                                                                 
+                                                                                
+   I got my first couple bug reports...mama, we made it! In                     
+ <a href='https://github.com/radarroark/xit/issues/2'>#2</a> I forgot that in <a href='https://github.com/radarroark/xitdb'>xitdb</a>, data made in a transaction is                   
+ temporarily mutable (an important perf optimization). It's                     
+ fun forgetting how my own database works. In <a href='https://github.com/radarroark/xit/issues/4'>#4</a> I forgot                     
+ that when you merge, the base commit might not actually                        
+ contain the conflicting file. Oops.                                            
+                                                                                
+   Shortly after that, I made patch-based merging <a href='https://github.com/radarroark/xit/commit/cfd04126c30a76c93d60b2c94e976fec81cae36e'>optional</a>.                   
+ It no longer generates patches during the clone, so cloning                    
+ repos with large histories won't outlast the heat death of                     
+ the universe. It still takes more time than git, because it                    
+ is decompressing and chunking each object...I'm working on                     
+ making it faster.                                                              
+                                                                                
+   The next morning I woke up feeling particularly                              
+ masochistic, so I decided to work on the pack file code. I                     
+ noticed that some fetches were failing because the pack file                   
+ from the server contained a <a href='https://git-scm.com/docs/pack-format'>REF_DELTA</a> object, which is an                    
+ deltified object whose base object is not in the pack and is                   
+ expected to already be in the object store. I <a href='https://github.com/radarroark/xit/commit/940452a07f9dc7f299d200a3f5f6de29fa3b3738'>fixed</a> the                      
+ pack object reader to read these objects correctly, and then                   
+ told my therapist all about it later that day.                                 
+                                                                                
+   After recovering from that eldritch horror I implemented                     
+ <a href='https://github.com/radarroark/xit/commit/cc3467ca99118867462314b4ee940f99ac6bac8c'>--abort</a> for merge and cherry-pick. This would normally be                    
+ easy because it's essentially just `git reset --hard`, which                   
+ xit already has in the form of `xit reset-dir`, but it                         
+ wasn't correctly cleaning up the merge state. Now it is, and                   
+ you can --abort all you want.                                                  
+                                                                                
+   The next day I turned to `push`, because there was an                        
+ issue that I doubt people would enjoy: all pushes were force                   
+ pushes. This is because the server does not check if you're                    
+ about to obliterate any commits...that check is done                           
+ client-side by git! I <a href='https://github.com/radarroark/xit/commit/c9a5ebac3e81031ae536a41b567de6fbecb5d2b9'>added</a> the check to xit, along with a                   
+ -f flag to bypass it.                                                          
+                                                                                
+   I had to get away from networking for a while so the next                    
+ day I turned to the TUI. I added an obvious optimization                       
+ that I should've added long ago: <a href='https://github.com/radarroark/xitui/commit/ac9e7f2dc65be4bc0b6e83d3f73bd609261db6bf'>buffered</a> writing. The TUI                   
+ on windows was particularly slow but now it's actually                         
+ usable. I also made the TUI exit cleanly when <a href='https://github.com/radarroark/xitui/commit/3a5030476cf7e745357a26d9f541bb5c47b07d3c'>ctrl+c</a> is                      
+ entered.                                                                       
+                                                                                
+   And that brings me to yesterday, when I added support for                    
+ <a href='https://github.com/radarroark/xit/commit/43035cf7a1e44d12f8f893fa42ab2fab30232a0e'>symlinks</a>. That was WAY more annoying than I thought it                       
+ would be. Fuck symlinks. Apparently windows agrees, because                    
+ it doesn't even let you make them without admin                                
+ privileges...so xit is forced to just make a normal file,                      
+ just like git does. Speaking of windows, I also added a nice                   
+ <a href='https://github.com/radarroark/xit/commit/26febda417fdac186984ba47aa4c09891397a7a6'>fix</a> to prevent windows users from accidentally overwriting                   
+ the file mode in a repo.                                                       
+                                                                                
+   That was just one week of work! Oh...and this blog is no                     
+ longer wrapping every single character in span tags. That                      
+ really triggered a lot of web developers. This is what                         
+ happens when you put a Zig programmer in charge of HTML. I                     
+ hope you all learned a valuable lesson.                                        
+                                                                                
+                                                                                
+</div>
+</body>
+</html>
