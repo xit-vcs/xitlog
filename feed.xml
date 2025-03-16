@@ -3,11 +3,87 @@
 
  <title>xitlog</title>
  <link href="https://radarroark.github.io/xit"/>
- <updated>2025-03-13T00:00:00Z</updated>
+ <updated>2025-03-16T00:00:00Z</updated>
  <author>
    <name>radar roark</name>
  </author>
  <id>https://radarroark.github.io/xit</id>
+
+ <entry>
+  <title>the timelessness of TUIs</title>
+  <link href="https://radarroark.github.io/xit/the-timelessness-of-tuis.html" title="the-timelessness-of-tuis"/>
+  <id>urn:uuid:5b07b6b8-edc0-4446-8bc2-6e55cdb8f52d</id>
+  <updated>2025-03-16T00:00:00Z</updated>
+  <content type="html" xml:lang="en"><![CDATA[
+  <p>The lowest common denominator of all UIs is text. In a way, TUIs (text user interfaces) are the only truly cross-platform UI. They can be rendered anywhere, including *inside* of other interfaces. They're nearly guaranteed to work on any hardware we invent in the future.</p>
+  <p>Compared to GUIs, however, TUIs are much lower resolution. You are limited to monospaced unicode characters. This feels like a negative, but it isn't. TUIs force you to distill your interface down to its most basic elements. Anything nonessential must go.</p>
+  <p>TUIs are inoculated from the excesses of modern software design. You don't get to have drop shadows, transparency, or scrolljacking. You get a limited palette of characters and colors, leaving the raw design of your interface to stand or fall on its own.</p>
+  <p>Limitations are a powerful catalyst for creativity. Curious people see limitations as an invitation to overcome them. Give a curious child a TI-83 and he will give you Space Invaders. Give him Minecraft and he will give you Roman aqueducts.</p>
+  <p>Orson Welles put it succinctly: "The enemy of art is the absence of limitations." There is no better way to snuff creativity out of a man than to give him endless resources and no deadline. Often, your best work comes when you have the strictest constraints...like having 1980s computer hardware that could display a whopping 16 different colors:</p>
+  <div data-node="dragon">Not visible in the RSS feed, sowwy.</div>
+  I'm making <a href="https://github.com/radarroark/xit">xit</a>, a version control system with a built-in TUI. It's still in its infancy but lately I've been working on the status view. If I were doing this in a GUI, I'd have spent a long time trying to decide how it should look, what controls to use, and so on. With a TUI, the decision paralysis goes away and you just do the dumb, simple thing:
+  <code> 
+     ╔══════╗                                                                   
+ log ║status║                                                                   
+     ╚══════╝                                                                   
+┌─────────┐                                                                     
+│added (1)│ not added (0)  not tracked (0)                                      
+└─────────┘                                                                     
+   ┌─────┐          ┌──────────────────────────────────────────────────────────┐
+ ± │f.txt│          │                                                          │
+   └─────┘          │ diff --git a/f.txt b/f.txt                               │
+                    │ index 98d5083..ae42890 100644                            │
+                    │ --- a/f.txt                                              │
+                    │ +++ b/f.txt                                              │
+                    │                                                          │
+                    │                                                          │
+                    │                                                          │
+                    │ @@ -1,3 +1,3 @@                                          │
+                    │   a                                                      │
+                    │ - x                                                      │
+                    │ + y                                                      │
+                    │   c                                                      │
+                    │                                                          │
+                    │                                                          │
+                    └──────────────────────────────────────────────────────────┘
+  </code>
+  If there's a merge conflict, it looks like this:
+  <code> 
+     ╔══════╗                                                                    
+ log ║status║                                                                    
+     ╚══════╝                                                                    
+           ┌─────────────┐                                                       
+ added (0) │not added (1)│ not tracked (0)                                       
+           └─────────────┘                                                       
+   ┌─────┐          ┌───────────────────────────────────────────────────────────┐
+ ≠ │f.txt│          │                                                           │
+   └─────┘          │ diff --git a/f.txt b/f.txt                                │
+                    │ index 98d5083..c3736c3 100644                             │
+                    │ --- a/f.txt                                               │
+                    │ +++ b/f.txt                                               │
+                    │                                                           │
+                    │                                                           │
+                    │                                                           │
+                    │ @@ -1,3 +1,9 @@                                           │
+                    │   a                                                       │
+                    │ + ⟨⟨⟨⟨⟨⟨⟨ target (master)                                 │
+                    │   x                                                       │
+                    │ + ||||||| base (31791fdb2aea4e32bde323475a03cfec7ad51bf4) │
+                    │ + b                                                       │
+                    │ + =======                                                 │
+                    │ + y                                                       │
+                    │ + ⟩⟩⟩⟩⟩⟩⟩ source (foo)                                    │
+                    │   c                                                       │
+                    │                                                           │
+                    │                                                           │
+                    └───────────────────────────────────────────────────────────┘
+  </code>
+  <p>With TUIs, you have permission to just do the plain, boring thing, which is likely the thing that will keep working well many years from now when UI design trends change.</p>
+  <p>Since TUIs are just text, you can embed them direcly in your unit tests like <a href="https://github.com/radarroark/xit/blob/ba86653fcc78b79c95c67613c3fd23ee35749f19/src/test/repo.zig#L1351">this</a>! Your entire UI can be tested from within the rest of your tests. The tests also become very easy to skim for the reader because they provide such an immediate, visual representation of what state you're in.</p>
+  <p>For developer tools, TUIs are a no-brainer. It blows my mind that tools are still shipping with an entire web browser inside them just to render an interface for people who are already very comfortable with the terminal. With a TUI, I can use your tool over SSH, and I have total control over the colors and fonts it uses to render.</p>
+  <p>TUIs are not a relic of the past. Every GUI framework you are using today will eventually become obsolete, while the simplicity and timelessness of TUIs will remain. GUIs get remembered, but <a href="https://www.youtube.com/shorts/U_pqRP-4hUc">TUIs never die</a>.</p>
+  ]]></content>
+</entry>
 
  <entry>
   <title>devlog - optional patches, force push, symlinks and more</title>
