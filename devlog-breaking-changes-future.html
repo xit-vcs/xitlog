@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>XITLOG - devlog breaking changes future</title>
+<style>
+html {
+  background-color: rgba(0, 50, 70, 1.0);
+  color: rgba(200, 200, 200, 1.0);
+}
+
+@font-face {
+  font-family: '3270';
+  src: url('term.ttf') format('truetype');
+}
+
+#grid {
+  font-family: '3270', monospace;
+  white-space: pre;
+  font-size: 22px;
+  line-height: 22px;
+}
+
+#grid a {
+  color: white;
+}
+</style>
+</head>
+<body>
+<div id="grid">                                                                                
+ <a href='index.html'>← HOME</a> - a blog about <a href='https://github.com/radarroark/xit'>xit</a>                <a href='feed.xml'>RSS</a>                             
+                                                                                
+ ██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗                                  
+ ╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝                                  
+  ╚███╔╝ ██║   ██║   ██║     ██║   ██║██║  ███╗                                 
+  ██╔██╗ ██║   ██║   ██║     ██║   ██║██║   ██║                                 
+ ██╔╝ ██╗██║   ██║   ███████╗╚██████╔╝╚██████╔╝                                 
+ ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝                                  
+                                                                                
+                                                                                
+                                                                                
+ DEVLOG - ZIG'S BREAKING CHANGES AND THE FUTURE OF XIT -                        
+ September 16, 2025                                                             
+                                                                                
+   In the last six months, my pace with the xit project                         
+ slowed down a lot, both for personal and technical reasons.                    
+ I hit some snags in my personal life that I'm still working                    
+ through. I'm sure some reading this can relate to the                          
+ experience where ordinary pains in life can sap your                           
+ once-limitless energy and excitement over a project. The                       
+ project didn't change; only your brain did.                                    
+                                                                                
+   On the technical side, zig 0.15 brought an avalanche of                      
+ breaking changes, most of which affected xit. Through sheer                    
+ force of will I got it all working in one huge <a href='https://github.com/radarroark/xit/commit/34695c9f87c5c5eb4650fc55c04a23dfadaa64a6'>commit</a>, but                   
+ it looks like 0.16 will be even more work for me once it is                    
+ released.                                                                      
+                                                                                
+   Currently xit is still using the old-style readers and                       
+ writers, including many custom ones, that were deprecated as                   
+ part of <a href='https://ziglang.org/download/0.15.1/release-notes.html#Writergate'>writergate</a>. In 0.16 it looks like they'll be                         
+ removed completely, so I will need to convert them to use                      
+ the new design everywhere.                                                     
+                                                                                
+   Additionally, zlib compression was removed from 0.15's std                   
+ lib, and there is no indication that the removal is                            
+ temporary. As a stopgap measure, I was able to just copy                       
+ that code into the xit project. However, it relies on the                      
+ old-style writers so it won't work once 0.16 is out. So,                       
+ I'll need to rewrite it to use the new writer interface, or                    
+ find another implementation.                                                   
+                                                                                
+   I don't want this to sound like complaining. The                             
+ writergate changes clearly make zig better, and arguably I                     
+ "signed up for this" by using an unstable language. That                       
+ said, at my reduced capacity, I wasn't prepared for this                       
+ level of breakage this late in the game. I'm hoping I'll get                   
+ another burst of motivation to support future versions of                      
+ zig so my 2+ years of effort don't turn into bitrot.                           
+                                                                                
+                                                                                
+</div>
+</body>
+</html>
