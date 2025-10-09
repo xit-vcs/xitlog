@@ -3,11 +3,24 @@
 
  <title>xitlog</title>
  <link href="https://radarroark.github.io/xit"/>
- <updated>2025-09-16T00:00:00Z</updated>
+ <updated>2025-10-09T00:00:00Z</updated>
  <author>
    <name>radar roark</name>
  </author>
  <id>https://radarroark.github.io/xit</id>
+
+ <entry>
+  <title>devlog - writergate</title>
+  <link href="https://radarroark.github.io/xit/devlog-writergate.html" title="devlog-writergate"/>
+  <id>urn:uuid:75854ffa-7c93-4563-9ad8-1c629502fea4</id>
+  <updated>2025-10-09T00:00:00Z</updated>
+  <content type="html" xml:lang="en"><![CDATA[
+  <p>In the last devlog, I mentioned that there was a lot more work to do to update xit for <a href="https://ziglang.org/download/0.15.1/release-notes.html#Writergate">writergate</a>. The fundamental reader and writer interfaces in Zig are changing, and xit contained many custom ones that needed to be redesigned with the new interfaces in mind.</p>
+  <p>I started by updating xitdb in <a href="https://github.com/radarroark/xitdb/commit/9523030360143509c0ee98907443b20f11ccc813">this</a> commit. Then I updated xit itself to use the new interfaces starting with <a href="https://github.com/radarroark/xit/commit/8a19e746713693467ce4fe2aca240808f866c0df">this</a> commit. It ended up being a lot of work but I can finally say that xit has survived writergate.</p>
+  <p>As a bonus, xit got a lot faster. A benchmark I use went from 8 seconds to 5 seconds on my machine -- a huge improvement! I didn't try that hard to figure out what caused it, but I think it's just due to better use of buffering. While xit was always using buffering internally, the changes for writergate really forced it to use buffering consistently, because buffers are now built-in to the interfaces.</p>
+  <p>There will be more breakages in Zig 0.16, but it looks like it won't be as severe as writergate. I'm excited about the upcoming Io interface, because it should make it trivial to introduce multi-threading into xit; right now, checking out a commit happens on a single thread so it's pretty slow. I'm also just hoping to finally get back to regular feature work...we'll see if that happens.</p>
+  ]]></content>
+ </entry>
 
  <entry>
   <title>devlog - zig's breaking changes and the future of xit</title>
