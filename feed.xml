@@ -3,11 +3,29 @@
 
  <title>xitlog</title>
  <link href="https://radarroark.github.io/xit"/>
- <updated>2025-10-09T00:00:00Z</updated>
+ <updated>2025-11-27T00:00:00Z</updated>
  <author>
    <name>radar roark</name>
  </author>
  <id>https://radarroark.github.io/xit</id>
+
+ <entry>
+  <title>devlog - zig 0.16's breaking changes</title>
+  <link href="https://radarroark.github.io/xit/devlog-0.16-breaking-changes.html" title="devlog-0.16-breaking-changes"/>
+  <id>urn:uuid:c3dc0ac9-eae8-44c1-bf19-7bf2a8e130e0</id>
+  <updated>2025-11-27T00:00:00Z</updated>
+  <content type="html" xml:lang="en"><![CDATA[
+  <p>I'm back from a lot of traveling and despite the jetlag and mild cold, I'm trying to get back into the project. The main progress I've made recently is making changes for Zig 0.16. I already wrote about the breakages from 0.15, but there are more on the way.</p>
+  <p>Zig 0.15 (and soon, 0.16) massively broke the xit project, because I made heavy use of the standard library. Accounting for these changes has taken months, because xit is not a small codebase anymore; it's over 25k lines. I "signed up" for this by using an unstable language. While it's not always fun to deal with, the changes are good for the language and even improved xit's performance.</p>
+  <p>One breaking change was zlib. In 0.15, Zig's zlib compressor was completely removed, and its decompressor was redesigned to comply with <a href="https://ziglang.org/download/0.15.1/release-notes.html#Writergate">writergate</a>. Since xit relies on zlib for git compatibility, this was a problem. My temporary solution was to copy the zlib code from the 0.14 std lib into the xit project, but that code uses the old-style readers/writers, so it's not a long-term solution.</p>
+  <p>The great news is that someone <a href="https://github.com/ziglang/zig/pull/25301">contributed</a> a writergate-compliant zlib compressor recently, so it'll be landing in 0.16. On a separate branch, I've already removed the vendored std lib code and replaced it with the new zlib compressor and decompressor. This was a lot of work, because they now have a very different API, but everything is looking good now.</p>
+  <p>Zig 0.16 is also <a href="https://github.com/ziglang/zig/pull/25592">introducing</a> the Io interface, which will need to be passed to anything that does i/o, including filesystem operations. I haven't done this change yet, and it's going to be pretty big in terms of line count, but I'm guessing it'll be mostly mindless work so I'm not worried about it. I'm pretty excited about this design because it should make it easy to multi-thread parts of xit.</p>
+  <p>Besides that, I did some work on master to improve http in xit. The new HTTP client in Zig 0.15 is very difficult to use correctly, and after the initial work to support 0.15 I temporarily recommended people stick to ssh-based networking. I finally found and <a href="https://github.com/radarroark/xit/commit/520c92e3b1c0d4f5657bed40847733df1c34284c">fixed</a> the problem, so http-based cloning now works again.</p>
+  <p>In the process of doing that, I realized my networking tests were not hitting certain code paths because they were making very small repos. I <a href="https://github.com/radarroark/xit/commit/97ce4a20eb403bb003588717f7d3b5fd6826e5d6">added</a> some tests that fetch and push repos containing much more data, so hopefully that will catch more problems in the future.</p>
+  <p>A year ago, I spent all three months of winter implementing git's client-side networking protocol in xit. This winter, I plan on implementing a server. My goal is to have a fully compliant git-compatible server written in Zig by the end of winter. I like doing this kind of boring, incremental work during the winter months when I'm stuck inside all day avoiding the bitter cold.</p>
+  <p>That means the project will probably be quiet in the meantime. Come spring, xit will come out of hibernation and new feature work will continue.</p>
+  ]]></content>
+ </entry>
 
  <entry>
   <title>devlog - surviving writergate</title>
@@ -23,8 +41,8 @@
  </entry>
 
  <entry>
-  <title>devlog - zig's breaking changes and the future of xit</title>
-  <link href="https://radarroark.github.io/xit/devlog-breaking-changes-future.html" title="devlog-breaking-changes-future"/>
+  <title>devlog - zig 0.15's breaking changes</title>
+  <link href="https://radarroark.github.io/xit/devlog-0.15-breaking-changes.html" title="devlog-0.15-breaking-changes"/>
   <id>urn:uuid:ccb476fb-1887-4ff1-b677-4a7dbcc08c40</id>
   <updated>2025-09-16T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
