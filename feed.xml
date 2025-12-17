@@ -3,11 +3,68 @@
 
  <title>xitlog</title>
  <link href="https://radarroark.github.io/xit"/>
- <updated>2025-11-27T00:00:00Z</updated>
+ <updated>2025-12-17T00:00:00Z</updated>
  <author>
    <name>radar roark</name>
  </author>
  <id>https://radarroark.github.io/xit</id>
+
+ <entry>
+  <title>devlog - patch-based merging is now enabled by default</title>
+  <link href="https://radarroark.github.io/xit/devlog-patch-merge-default.html" title="devlog-patch-merge-default"/>
+  <id>urn:uuid:762647b3-3711-4815-a998-e78aa4790330</id>
+  <updated>2025-12-17T00:00:00Z</updated>
+  <content type="html" xml:lang="en"><![CDATA[
+  <p>Today I decided to finally <a href="https://github.com/radarroark/xit/commit/d4bdd53e4127d116c5504008a9a22021b6364851">enable</a> patch-based merging by default in xit. I believe xit is the first version control system to have this feature while still being fully git-compatible, and it is (for now) xit's marquee feature.</p>
+  <p>As I said in the <a href="https://github.com/radarroark/xit/blob/master/docs/patch.md">documentation</a>, patch-based merging is more reliable and leads to fewer conflicts than the three-way merge that git uses. The example I used in that doc was combining merging and cherry-picking, which git fumbles so regularly that our entire industry has built processes around avoiding it. We have collectively gaslit ourselves into thinking it is inherently a bad idea, when it really is just a limitation of git.</p>
+  <p>In addition to the cherry-picking problem, there is another kind of merge conflict that git produces and xit avoids: adjacent line conflicts. If one branch edits a line, and another branch edits the line directly above or below it, git will produce a conflict. People often <a href="https://softwareengineering.stackexchange.com/questions/194788/why-doesnt-git-merge-adjacent-lines-without-conflict">wonder</a> why this is a conflict -- they're different lines!</p>
+  Imagine starting with this file:
+  <code> 
+1
+2
+3
+4
+  </code>
+  On the master branch, you make this change:
+  <code> 
+1
+2 changed on master
+3
+4
+  </code>
+  Then on the foo branch, you make this change:
+  <code> 
+1
+2
+3 changed on foo
+4
+  </code>
+  What happens when you try to merge foo into master? With git, you get this:
+  <code> 
+1
+⟨⟨⟨⟨⟨⟨⟨ HEAD
+2 changed on master
+3
+=======
+2
+3 changed on foo
+⟩⟩⟩⟩⟩⟩⟩ foo
+4
+  </code>
+  With xit, you get this:
+  <code> 
+1
+2 changed on master
+3 changed on foo
+4
+  </code>
+  <p>Many people, including in the above-mentioned stack overflow post, assume that this is an intentional safety feature in git, but that is nonsense. If we added even a single empty line between 2 and 3 in the example above, git would've auto-resolved the conflict! Why is it more dangerous to merge changes that are next to each other compared to those that are separated by one line?</p>
+  <p>The reality is that merging can *always* lead to invalid code, because the VCS doesn't have any semantic understanding of your code. If you add a new call to `hello()` on branch A, and you delete the `hello` function on branch B, guess what happens when you merge B into A? In both git and xit, it completes successfully but the code is broken. This is unavoidable.</p>
+  <p>The behavior above has nothing to do with safety, but rather is a limitation of the diff3 algorithm that git uses during a merge. When looking for where to place a change, it uses the content of the parent line (the one immediately above it) to decide where it should go. If that line was changed on the other branch, this technique breaks, resulting in a conflict.</p>
+  <p>The core problem is that git just doesn't have enough information. All it can see is a line number and the content, after all. In contrast, xit assigns a globally-unique id to every line, allowing it to know without ambiguity where it should go. This also explains why git can <a href="https://tahoe-lafs.org/~zooko/badmerge/concrete-good-semantics.html">sometimes</a> auto-resolve a conflict by putting the change in the wrong place! While not as common as adjacent line conflicts, it's scary that it's even possible.</p>
+  <p>Currently, the main downside of patch-based merging is that it can take a long time to initially generate patches, because it must do so for every commit in the history of the repo. You can always run `xit patch off` if you want to disable it, in which case xit will use the three-way merge just like git. There are plenty of optimizations coming to make patch generation faster, but you'll always have that escape hatch if you need it.</p>
+  ]]></content>
+ </entry>
 
  <entry>
   <title>devlog - zig 0.16's breaking changes</title>
