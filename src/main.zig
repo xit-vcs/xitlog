@@ -63,7 +63,10 @@ fn startZ() !void {
     var iter = root.getFocus().children.iterator();
     while (iter.next()) |entry| {
         const child = entry.value_ptr.*;
-        addElemZ(@tagName(child.focus.kind), child.focus.id, child.rect.x, child.rect.y, child.rect.size.width, child.rect.size.height);
+        switch (child.focus.kind) {
+            .text_box => addElemZ(@tagName(child.focus.kind), child.focus.id, child.rect.x, child.rect.y, child.rect.size.width, child.rect.size.height),
+            else => {},
+        }
     }
 }
 

@@ -10,8 +10,7 @@ var importObject = {
         },
         setHtml: function(ptr, len) {
           const memory = wasmInstance.exports.memory;
-          const html = new TextDecoder().decode(new Uint8Array(memory.buffer, ptr, len));
-          grid.innerHTML = "<div>" + html + "</div>";
+          grid.textContent = new TextDecoder().decode(new Uint8Array(memory.buffer, ptr, len));
         },
         addElem: function(ptr, len, id, x, y, width, height) {
           const memory = wasmInstance.exports.memory;
