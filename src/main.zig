@@ -7,24 +7,8 @@ const inp = xitui.input;
 const Grid = xitui.grid.Grid;
 const Focus = xitui.focus.Focus;
 
-extern fn consoleLog(arg: [*]const u8, len: u32) void;
-extern fn setHtml(arg: [*]const u8, len: u32) void;
-
-fn consoleLogZ(arg: []const u8) void {
-    consoleLog(arg.ptr, arg.len);
-}
-
-fn setHtmlZ(arg: []const u8) void {
-    setHtml(arg.ptr, arg.len);
-}
-
-var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
-
 export fn start() void {
-    var fba = std.heap.FixedBufferAllocator.init(&buffer);
-    const allocator = fba.allocator();
-
-    const grid_str = createGrid(allocator) catch |err| switch (err) {
+    startZ() catch |err| switch (err) {
         error.OutOfMemory => {
             consoleLogZ("out of memory");
             return;
@@ -34,12 +18,30 @@ export fn start() void {
             return;
         },
     };
-    defer allocator.free(grid_str);
-
-    setHtmlZ(grid_str);
 }
 
-fn createGrid(allocator: std.mem.Allocator) ![]const u8 {
+extern fn consoleLog(arg: [*]const u8, len: u32) void;
+extern fn setHtml(arg: [*]const u8, len: u32) void;
+extern fn addElem(arg: [*]const u8, len: u32, id: u32, x: u32, y: u32, width: u32, height: u32) void;
+
+fn consoleLogZ(arg: []const u8) void {
+    consoleLog(arg.ptr, arg.len);
+}
+
+fn setHtmlZ(arg: []const u8) void {
+    setHtml(arg.ptr, arg.len);
+}
+
+fn addElemZ(arg: []const u8, id: u32, x: u32, y: u32, width: u32, height: u32) void {
+    addElem(arg.ptr, arg.len, id, x, y, width, height);
+}
+
+var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
+
+fn startZ() !void {
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
+
     // init root widget
     var root = Widget{ .widget_list = try WidgetList.init(allocator) };
     defer root.deinit();
@@ -53,15 +55,16 @@ fn createGrid(allocator: std.mem.Allocator) ![]const u8 {
         try root.getFocus().setFocus(child_id);
     }
 
+    const grid_str = try root.getGrid().?.toString(allocator);
+    defer allocator.free(grid_str);
+
+    setHtmlZ(grid_str);
+
     var iter = root.getFocus().children.iterator();
     while (iter.next()) |entry| {
         const child = entry.value_ptr.*;
-        var buf: [100]u8 = undefined;
-        const buf_slice = try std.fmt.bufPrint(&buf, "{}", .{child.focus.kind});
-        consoleLogZ(buf_slice);
+        addElemZ(@tagName(child.focus.kind), child.focus.id, child.rect.x, child.rect.y, child.rect.size.width, child.rect.size.height);
     }
-
-    return try root.getGrid().?.toString(allocator);
 }
 
 const WidgetList = struct {
