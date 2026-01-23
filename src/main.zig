@@ -24,9 +24,13 @@ export fn start() void {
     consoleLogZ("hello");
 }
 
+var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
+
 fn main() !void {
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
+
     // init root widget
-    const allocator = std.heap.wasm_allocator;
     var root = Widget{ .widget_list = try WidgetList.init(allocator) };
     defer root.deinit();
 

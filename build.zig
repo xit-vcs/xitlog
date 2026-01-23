@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const number_of_pages = 2;
+const number_of_pages = 16;
 
 pub fn build(b: *std.Build) void {
     const target = b.resolveTargetQuery(.{
@@ -21,7 +21,8 @@ pub fn build(b: *std.Build) void {
     exe.global_base = 6560;
     exe.entry = .disabled;
     exe.rdynamic = true;
-    exe.import_memory = true;
+    exe.import_memory = false;
+    exe.export_memory = true;
     exe.stack_size = std.wasm.page_size;
 
     exe.initial_memory = std.wasm.page_size * number_of_pages;
