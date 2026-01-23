@@ -3,8 +3,27 @@
     <head>
         <meta charset="utf-8">
         <title>Minimal zig-wasm</title>
-        <script src="script.js"></script>
+        <style>
+          html {
+            background-color: rgba(0, 50, 70, 1.0);
+            color: rgba(200, 200, 200, 1.0);
+          }
+
+          @font-face {
+            font-family: '3270';
+            src: url('term.ttf') format('truetype');
+          }
+
+          #grid {
+            font-family: '3270', monospace;
+            white-space: pre;
+            font-size: 22px;
+            line-height: 22px;
+          }
+        </style>
     </head>
     <body>
+      <div id="grid"></div>
+      <script src="script.js"></script>
     </body>
 </html>

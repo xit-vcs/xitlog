@@ -8,28 +8,38 @@ const Grid = xitui.grid.Grid;
 const Focus = xitui.focus.Focus;
 
 extern fn consoleLog(arg: [*]const u8, len: u32) void;
+extern fn setHtml(arg: [*]const u8, len: u32) void;
 
 fn consoleLogZ(arg: []const u8) void {
     consoleLog(arg.ptr, arg.len);
 }
 
-export fn start() void {
-    main() catch |err| switch (err) {
-        error.OutOfMemory => {
-            consoleLogZ("out of memory");
-            return;
-        },
-        else => return,
-    };
-    consoleLogZ("hello");
+fn setHtmlZ(arg: []const u8) void {
+    setHtml(arg.ptr, arg.len);
 }
 
 var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
 
-fn main() !void {
+export fn start() void {
     var fba = std.heap.FixedBufferAllocator.init(&buffer);
     const allocator = fba.allocator();
 
+    const grid_str = createGrid(allocator) catch |err| switch (err) {
+        error.OutOfMemory => {
+            consoleLogZ("out of memory");
+            return;
+        },
+        else => {
+            consoleLogZ("error");
+            return;
+        },
+    };
+    defer allocator.free(grid_str);
+
+    setHtmlZ(grid_str);
+}
+
+fn createGrid(allocator: std.mem.Allocator) ![]const u8 {
     // init root widget
     var root = Widget{ .widget_list = try WidgetList.init(allocator) };
     defer root.deinit();
@@ -37,11 +47,21 @@ fn main() !void {
     // set initial focus for root widget
     try root.build(.{
         .min_size = .{ .width = null, .height = null },
-        .max_size = .{ .width = 10, .height = 10 },
+        .max_size = .{ .width = null, .height = null },
     }, root.getFocus());
     if (root.getFocus().child_id) |child_id| {
         try root.getFocus().setFocus(child_id);
     }
+
+    var iter = root.getFocus().children.iterator();
+    while (iter.next()) |entry| {
+        const child = entry.value_ptr.*;
+        var buf: [100]u8 = undefined;
+        const buf_slice = try std.fmt.bufPrint(&buf, "{}", .{child.focus.kind});
+        consoleLogZ(buf_slice);
+    }
+
+    return try root.getGrid().?.toString(allocator);
 }
 
 const WidgetList = struct {
