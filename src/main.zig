@@ -64,7 +64,14 @@ fn startZ() !void {
     while (iter.next()) |entry| {
         const child = entry.value_ptr.*;
         switch (child.focus.kind) {
-            .text_box => addElemZ(@tagName(child.focus.kind), child.focus.id, child.rect.x, child.rect.y, child.rect.size.width, child.rect.size.height),
+            .text_box => addElemZ(
+                @tagName(child.focus.kind),
+                child.focus.id,
+                child.rect.x + 1,
+                child.rect.y + 1,
+                child.rect.size.width - 2,
+                child.rect.size.height - 2,
+            ),
             else => {},
         }
     }
