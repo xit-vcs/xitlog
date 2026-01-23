@@ -42,11 +42,6 @@ fn main() !void {
     if (root.getFocus().child_id) |child_id| {
         try root.getFocus().setFocus(child_id);
     }
-
-    try root.build(.{
-        .min_size = .{ .width = null, .height = null },
-        .max_size = .{ .width = null, .height = null },
-    }, root.getFocus());
 }
 
 const WidgetList = struct {
