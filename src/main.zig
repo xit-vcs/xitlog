@@ -55,26 +55,39 @@ fn startZ() !void {
         try root.getFocus().setFocus(child_id);
     }
 
-    const grid_str = try root.getGrid().?.toString(allocator);
-    defer allocator.free(grid_str);
+    var output = std.ArrayList([]const u8){};
 
-    setHtmlZ(grid_str);
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+
+    const grid_str = try root.getGrid().?.toString(arena.allocator());
+    try output.append(arena.allocator(), grid_str);
 
     var iter = root.getFocus().children.iterator();
     while (iter.next()) |entry| {
         const child = entry.value_ptr.*;
         switch (child.focus.kind) {
-            .text_box => addElemZ(
-                @tagName(child.focus.kind),
-                child.focus.id,
-                child.rect.x + 1,
-                child.rect.y + 1,
-                child.rect.size.width - 2,
-                child.rect.size.height - 2,
-            ),
+            .text_box => {
+                const html = try std.fmt.allocPrint(
+                    arena.allocator(),
+                    "<div class='{s}' style='position: absolute; top: {}px; left: {}px; width: {}px; height: {}px;'></div>",
+                    .{
+                        @tagName(child.focus.kind),
+                        (child.rect.y + 1) * 22,
+                        (child.rect.x + 1) * 12,
+                        (child.rect.size.width - 2) * 12,
+                        (child.rect.size.height - 2) * 22,
+                    },
+                );
+                try output.append(arena.allocator(), html);
+            },
             else => {},
         }
     }
+
+    const html = try std.mem.join(arena.allocator(), "", output.items);
+
+    setHtmlZ(html);
 }
 
 const WidgetList = struct {
