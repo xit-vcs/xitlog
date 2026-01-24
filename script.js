@@ -21,10 +21,9 @@ var importObject = {
 
           const elem = document.createElement("div");
 
-          const rect = grid.getBoundingClientRect();
           elem.style.position = "absolute";
-          elem.style.top = (22 * y + rect.top) + "px";
-          elem.style.left = (12 * x + rect.left) + "px";
+          elem.style.top = (22 * y) + "px";
+          elem.style.left = (12 * x) + "px";
           elem.style.width = (12 * width) + "px";
           elem.style.height = (22 * height) + "px";
 
