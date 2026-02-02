@@ -28,7 +28,7 @@ html {
 </head>
 <body>
 <div id="grid">                                                                                
- <a href='index.html'>← HOME</a> - a blog about <a href='https://github.com/radarroark/xit'>xit</a>                <a href='feed.xml'>RSS</a>                             
+ <a href='index.html'>← HOME</a> - a blog about <a href='https://github.com/xit-vcs/xit'>xit</a>                <a href='feed.xml'>RSS</a>                             
                                                                                 
  ██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗                                  
  ╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝                                  
@@ -83,12 +83,12 @@ html {
  xit. The new HTTP client in Zig 0.15 is very difficult to                      
  use correctly, and after the initial work to support 0.15 I                    
  temporarily recommended people stick to ssh-based                              
- networking. I finally found and <a href='https://github.com/radarroark/xit/commit/520c92e3b1c0d4f5657bed40847733df1c34284c'>fixed</a> the problem, so                        
+ networking. I finally found and <a href='https://github.com/xit-vcs/xit/commit/520c92e3b1c0d4f5657bed40847733df1c34284c'>fixed</a> the problem, so                        
  http-based cloning now works again.                                            
                                                                                 
    In the process of doing that, I realized my networking                       
  tests were not hitting certain code paths because they were                    
- making very small repos. I <a href='https://github.com/radarroark/xit/commit/97ce4a20eb403bb003588717f7d3b5fd6826e5d6'>added</a> some tests that fetch and                   
+ making very small repos. I <a href='https://github.com/xit-vcs/xit/commit/97ce4a20eb403bb003588717f7d3b5fd6826e5d6'>added</a> some tests that fetch and                   
  push repos containing much more data, so hopefully that will                   
  catch more problems in the future.                                             
                                                                                 

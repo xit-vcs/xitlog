@@ -28,7 +28,7 @@ html {
 </head>
 <body>
 <div id="grid">                                                                                
- <a href='index.html'>← HOME</a> - a blog about <a href='https://github.com/radarroark/xit'>xit</a>                <a href='feed.xml'>RSS</a>                             
+ <a href='index.html'>← HOME</a> - a blog about <a href='https://github.com/xit-vcs/xit'>xit</a>                <a href='feed.xml'>RSS</a>                             
                                                                                 
  ██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗                                  
  ╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝                                  
@@ -49,8 +49,8 @@ html {
  was the same in both cases: xit was constantly reading small                   
  pieces of files from the disk.                                                 
                                                                                 
-   To solve this, I <a href='https://github.com/radarroark/xit/commit/68b0d14f96390d4360b2b821ab8b55a015368e19'>first</a> made it read text files fully                       
- into memory for diffing. I <a href='https://github.com/radarroark/xit/commit/ba86653fcc78b79c95c67613c3fd23ee35749f19'>then</a> updated the pack object                      
+   To solve this, I <a href='https://github.com/xit-vcs/xit/commit/68b0d14f96390d4360b2b821ab8b55a015368e19'>first</a> made it read text files fully                       
+ into memory for diffing. I <a href='https://github.com/xit-vcs/xit/commit/ba86653fcc78b79c95c67613c3fd23ee35749f19'>then</a> updated the pack object                      
  reader to load objects from pack files entirely into memory                    
  (if they are below a certain file size). After these two                       
  changes, generating patches and cloning/fetching are much                      
@@ -58,20 +58,20 @@ html {
                                                                                 
    The UI got some love as well. I noticed that I neglected                     
  to show conflicts in the status TUI, and that has been                         
- <a href='https://github.com/radarroark/xit/commit/6ecbeae2fa64fc8052d7bbafc7466653efeff640'>fixed</a>. A while later, I began <a href='https://github.com/radarroark/xit/commit/42eaf5a69f34087dc31d3c518d754738a35a3458'>embedding</a> TUIs into my                       
+ <a href='https://github.com/xit-vcs/xit/commit/6ecbeae2fa64fc8052d7bbafc7466653efeff640'>fixed</a>. A while later, I began <a href='https://github.com/xit-vcs/xit/commit/42eaf5a69f34087dc31d3c518d754738a35a3458'>embedding</a> TUIs into my                       
  unit tests. Yes, I mean literally making assertions that                       
  embed the TUI in a big string. It's glorious...let's see you                   
  do that, GUI / web developers.                                                 
                                                                                 
    I also made some critical networking fixes recently. I                       
- <a href='https://github.com/radarroark/xit/commit/8a2da06faf00daf232f7420b9d032d9cfdaa5bf3'>revamped</a> and <a href='https://github.com/radarroark/xit/commit/f312357078c5184ab0068d6ff5d07f405af212dd'>fixed</a> the http code, because it was quite                     
+ <a href='https://github.com/xit-vcs/xit/commit/8a2da06faf00daf232f7420b9d032d9cfdaa5bf3'>revamped</a> and <a href='https://github.com/xit-vcs/xit/commit/f312357078c5184ab0068d6ff5d07f405af212dd'>fixed</a> the http code, because it was quite                     
  badly broken for more complex fetches. Hopefully it will now                   
  be as reliable as the ssh code, which is inherently easier                     
  to get right due to its simplicity (the ssh client does most                   
  of the work, after all).                                                       
                                                                                 
    After the above-mentioned performance fixes, I felt                          
- comfortable <a href='https://github.com/radarroark/xit/commit/ae08487e7dd0f340f64613e4eac8a8649105a367'>re-enabling</a> compression on text chunks.                          
+ comfortable <a href='https://github.com/xit-vcs/xit/commit/ae08487e7dd0f340f64613e4eac8a8649105a367'>re-enabling</a> compression on text chunks.                          
  Previously, I had disabled it because patch generation was                     
  so slow, I didn't want to slow it down more with                               
  compression. It is now enabled, though xit repos will                          
@@ -79,7 +79,7 @@ html {
  are plenty more optimizations coming.                                          
                                                                                 
    Lastly, I've received a slew of great PRs from my first                      
- contributor, and <a href='https://github.com/radarroark/xit/commit/927def28698d516ba720c36cd3a9b4bba03b4a97'>this</a> one is worth noting. When you enable                   
+ contributor, and <a href='https://github.com/xit-vcs/xit/commit/927def28698d516ba720c36cd3a9b4bba03b4a97'>this</a> one is worth noting. When you enable                   
  patch-based merging with `xit patch on`, it now generates                      
  the necessary patches at merge time rather than right away.                    
  If you actually want to generate them all in advance, you                      

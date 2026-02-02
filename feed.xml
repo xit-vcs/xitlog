@@ -2,21 +2,21 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
  <title>xitlog</title>
- <link href="https://radarroark.github.io/xit"/>
+ <link href="https://xit-vcs.github.io/xitlog"/>
  <updated>2025-12-17T00:00:00Z</updated>
  <author>
    <name>radar roark</name>
  </author>
- <id>https://radarroark.github.io/xit</id>
+ <id>https://xit-vcs.github.io/xitlog</id>
 
  <entry>
   <title>devlog - patch-based merging is now enabled by default</title>
-  <link href="https://radarroark.github.io/xit/devlog-patch-merge-default.html" title="devlog-patch-merge-default"/>
+  <link href="https://xit-vcs.github.io/xitlog/devlog-patch-merge-default.html" title="devlog-patch-merge-default"/>
   <id>urn:uuid:762647b3-3711-4815-a998-e78aa4790330</id>
   <updated>2025-12-17T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
-  <p>Today I decided to finally <a href="https://github.com/radarroark/xit/commit/d4bdd53e4127d116c5504008a9a22021b6364851">enable</a> patch-based merging by default in xit. I believe xit is the first version control system to have this feature while still being fully git-compatible, and it is (for now) xit's marquee feature.</p>
-  <p>As I said in the <a href="https://github.com/radarroark/xit/blob/master/docs/patch.md">documentation</a>, patch-based merging is more reliable and leads to fewer conflicts than the three-way merge that git uses. The example I used in that doc was combining merging and cherry-picking, which git fumbles so regularly that our entire industry has built processes around avoiding it. We have collectively gaslit ourselves into thinking it is inherently a bad idea, when it really is just a limitation of git.</p>
+  <p>Today I decided to finally <a href="https://github.com/xit-vcs/xit/commit/d4bdd53e4127d116c5504008a9a22021b6364851">enable</a> patch-based merging by default in xit. I believe xit is the first version control system to have this feature while still being fully git-compatible, and it is (for now) xit's marquee feature.</p>
+  <p>As I said in the <a href="https://github.com/xit-vcs/xit/blob/master/docs/patch.md">documentation</a>, patch-based merging is more reliable and leads to fewer conflicts than the three-way merge that git uses. The example I used in that doc was combining merging and cherry-picking, which git fumbles so regularly that our entire industry has built processes around avoiding it. We have collectively gaslit ourselves into thinking it is inherently a bad idea, when it really is just a limitation of git.</p>
   <p>In addition to the cherry-picking problem, there is another kind of merge conflict that git produces and xit avoids: adjacent line conflicts. If one branch edits a line, and another branch edits the line directly above or below it, git will produce a conflict. People often <a href="https://softwareengineering.stackexchange.com/questions/194788/why-doesnt-git-merge-adjacent-lines-without-conflict">wonder</a> why this is a conflict -- they're different lines!</p>
   Imagine starting with this file:
   <code> 
@@ -68,7 +68,7 @@
 
  <entry>
   <title>devlog - zig 0.16's breaking changes</title>
-  <link href="https://radarroark.github.io/xit/devlog-0.16-breaking-changes.html" title="devlog-0.16-breaking-changes"/>
+  <link href="https://xit-vcs.github.io/xitlog/devlog-0.16-breaking-changes.html" title="devlog-0.16-breaking-changes"/>
   <id>urn:uuid:c3dc0ac9-eae8-44c1-bf19-7bf2a8e130e0</id>
   <updated>2025-11-27T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
@@ -77,8 +77,8 @@
   <p>One breaking change was zlib. In 0.15, Zig's zlib compressor was completely removed, and its decompressor was redesigned to comply with <a href="https://ziglang.org/download/0.15.1/release-notes.html#Writergate">writergate</a>. Since xit relies on zlib for git compatibility, this was a problem. My temporary solution was to copy the zlib code from the 0.14 std lib into the xit project, but that code uses the old-style readers/writers, so it's not a long-term solution.</p>
   <p>The great news is that someone <a href="https://github.com/ziglang/zig/pull/25301">contributed</a> a writergate-compliant zlib compressor recently, so it'll be landing in 0.16. On a separate branch, I've already removed the vendored std lib code and replaced it with the new zlib compressor and decompressor. This was a lot of work, because they now have a very different API, but everything is looking good now.</p>
   <p>Zig 0.16 is also <a href="https://github.com/ziglang/zig/pull/25592">introducing</a> the Io interface, which will need to be passed to anything that does i/o, including filesystem operations. I haven't done this change yet, and it's going to be pretty big in terms of line count, but I'm guessing it'll be mostly mindless work so I'm not worried about it. I'm pretty excited about this design because it should make it easy to multi-thread parts of xit.</p>
-  <p>Besides that, I did some work on master to improve http in xit. The new HTTP client in Zig 0.15 is very difficult to use correctly, and after the initial work to support 0.15 I temporarily recommended people stick to ssh-based networking. I finally found and <a href="https://github.com/radarroark/xit/commit/520c92e3b1c0d4f5657bed40847733df1c34284c">fixed</a> the problem, so http-based cloning now works again.</p>
-  <p>In the process of doing that, I realized my networking tests were not hitting certain code paths because they were making very small repos. I <a href="https://github.com/radarroark/xit/commit/97ce4a20eb403bb003588717f7d3b5fd6826e5d6">added</a> some tests that fetch and push repos containing much more data, so hopefully that will catch more problems in the future.</p>
+  <p>Besides that, I did some work on master to improve http in xit. The new HTTP client in Zig 0.15 is very difficult to use correctly, and after the initial work to support 0.15 I temporarily recommended people stick to ssh-based networking. I finally found and <a href="https://github.com/xit-vcs/xit/commit/520c92e3b1c0d4f5657bed40847733df1c34284c">fixed</a> the problem, so http-based cloning now works again.</p>
+  <p>In the process of doing that, I realized my networking tests were not hitting certain code paths because they were making very small repos. I <a href="https://github.com/xit-vcs/xit/commit/97ce4a20eb403bb003588717f7d3b5fd6826e5d6">added</a> some tests that fetch and push repos containing much more data, so hopefully that will catch more problems in the future.</p>
   <p>A year ago, I spent all three months of winter implementing git's client-side networking protocol in xit. This winter, I plan on implementing a server. My goal is to have a fully compliant git-compatible server written in Zig by the end of winter. I like doing this kind of boring, incremental work during the winter months when I'm stuck inside all day avoiding the bitter cold.</p>
   <p>That means the project will probably be quiet in the meantime. Come spring, xit will come out of hibernation and new feature work will continue.</p>
   ]]></content>
@@ -86,12 +86,12 @@
 
  <entry>
   <title>devlog - surviving writergate</title>
-  <link href="https://radarroark.github.io/xit/devlog-surviving-writergate.html" title="devlog-surviving-writergate"/>
+  <link href="https://xit-vcs.github.io/xitlog/devlog-surviving-writergate.html" title="devlog-surviving-writergate"/>
   <id>urn:uuid:75854ffa-7c93-4563-9ad8-1c629502fea4</id>
   <updated>2025-10-09T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
   <p>In the last devlog, I mentioned that there was a lot more work to do to update xit for <a href="https://ziglang.org/download/0.15.1/release-notes.html#Writergate">writergate</a>. The fundamental reader and writer interfaces in Zig are changing, and xit contained many custom ones that needed to be redesigned with the new interfaces in mind.</p>
-  <p>I started by updating xitdb in <a href="https://github.com/radarroark/xitdb/commit/9523030360143509c0ee98907443b20f11ccc813">this</a> commit. Then I updated xit itself to use the new interfaces starting with <a href="https://github.com/radarroark/xit/commit/8a19e746713693467ce4fe2aca240808f866c0df">this</a> commit. It ended up being a lot of work but I can finally say that xit has survived writergate.</p>
+  <p>I started by updating xitdb in <a href="https://github.com/xit-vcs/xitdb/commit/9523030360143509c0ee98907443b20f11ccc813">this</a> commit. Then I updated xit itself to use the new interfaces starting with <a href="https://github.com/xit-vcs/xit/commit/8a19e746713693467ce4fe2aca240808f866c0df">this</a> commit. It ended up being a lot of work but I can finally say that xit has survived writergate.</p>
   <p>As a bonus, xit got a lot faster. A benchmark I use went from 8 seconds to 5 seconds on my machine -- a huge improvement! I didn't try that hard to figure out what caused it, but I think it's just due to better use of buffering. While xit was always using buffering internally, the changes for writergate really forced it to use buffering consistently, because buffers are now built-in to the interfaces.</p>
   <p>There will be more breakages in Zig 0.16, but it looks like it won't be as severe as writergate. I'm excited about the upcoming Io interface, because it should make it trivial to introduce multi-threading into xit; right now, checking out a commit happens on a single thread so it's pretty slow. I'm also just hoping to finally get back to regular feature work...we'll see if that happens.</p>
   ]]></content>
@@ -99,12 +99,12 @@
 
  <entry>
   <title>devlog - zig 0.15's breaking changes</title>
-  <link href="https://radarroark.github.io/xit/devlog-0.15-breaking-changes.html" title="devlog-0.15-breaking-changes"/>
+  <link href="https://xit-vcs.github.io/xitlog/devlog-0.15-breaking-changes.html" title="devlog-0.15-breaking-changes"/>
   <id>urn:uuid:ccb476fb-1887-4ff1-b677-4a7dbcc08c40</id>
   <updated>2025-09-16T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
   <p>In the last six months, my pace with the xit project slowed down a lot, both for personal and technical reasons. I hit some snags in my personal life that I'm still working through. I'm sure some reading this can relate to the experience where ordinary pains in life can sap your once-limitless energy and excitement over a project. The project didn't change; only your brain did.</p>
-  <p>On the technical side, zig 0.15 brought an avalanche of breaking changes, most of which affected xit. Through sheer force of will I got it all working in one huge <a href="https://github.com/radarroark/xit/commit/34695c9f87c5c5eb4650fc55c04a23dfadaa64a6">commit</a>, but it looks like 0.16 will be even more work for me once it is released.</p>
+  <p>On the technical side, zig 0.15 brought an avalanche of breaking changes, most of which affected xit. Through sheer force of will I got it all working in one huge <a href="https://github.com/xit-vcs/xit/commit/34695c9f87c5c5eb4650fc55c04a23dfadaa64a6">commit</a>, but it looks like 0.16 will be even more work for me once it is released.</p>
   <p>Currently xit is still using the old-style readers and writers, including many custom ones, that were deprecated as part of <a href="https://ziglang.org/download/0.15.1/release-notes.html#Writergate">writergate</a>. In 0.16 it looks like they'll be removed completely, so I will need to convert them to use the new design everywhere.</p>
   <p>Additionally, zlib compression was removed from 0.15's std lib, and there is no indication that the removal is temporary. As a stopgap measure, I was able to just copy that code into the xit project. However, it relies on the old-style writers so it won't work once 0.16 is out. So, I'll need to rewrite it to use the new writer interface, or find another implementation.</p>
   <p>I don't want this to sound like complaining. The writergate changes clearly make zig better, and arguably I "signed up for this" by using an unstable language. That said, at my reduced capacity, I wasn't prepared for this level of breakage this late in the game. I'm hoping I'll get another burst of motivation to support future versions of zig so my 2+ years of effort don't turn into bitrot.</p>
@@ -113,22 +113,22 @@
 
  <entry>
   <title>devlog - faster diffing/cloning, lazy patches, and more</title>
-  <link href="https://radarroark.github.io/xit/devlog-faster-diff-and-clone.html" title="devlog-faster-diff-and-clone"/>
+  <link href="https://xit-vcs.github.io/xitlog/devlog-faster-diff-and-clone.html" title="devlog-faster-diff-and-clone"/>
   <id>urn:uuid:18c76e83-8ce1-464c-a7ab-6ee6ce4154a9</id>
   <updated>2025-03-21T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
   <p>Rejoice! xit is no longer quite as dog slow as it was before. In particular, writing objects (at the end of a clone or fetch) and generating patches are much faster now. After some investigation, it became clear that the problem was the same in both cases: xit was constantly reading small pieces of files from the disk.</p>
-  <p>To solve this, I <a href="https://github.com/radarroark/xit/commit/68b0d14f96390d4360b2b821ab8b55a015368e19">first</a> made it read text files fully into memory for diffing. I <a href="https://github.com/radarroark/xit/commit/ba86653fcc78b79c95c67613c3fd23ee35749f19">then</a> updated the pack object reader to load objects from pack files entirely into memory (if they are below a certain file size). After these two changes, generating patches and cloning/fetching are much faster.</p>
-  <p>The UI got some love as well. I noticed that I neglected to show conflicts in the status TUI, and that has been <a href="https://github.com/radarroark/xit/commit/6ecbeae2fa64fc8052d7bbafc7466653efeff640">fixed</a>. A while later, I began <a href="https://github.com/radarroark/xit/commit/42eaf5a69f34087dc31d3c518d754738a35a3458">embedding</a> TUIs into my unit tests. Yes, I mean literally making assertions that embed the TUI in a big string. It's glorious...let's see you do that, GUI / web developers.</p>
-  <p>I also made some critical networking fixes recently. I <a href="https://github.com/radarroark/xit/commit/8a2da06faf00daf232f7420b9d032d9cfdaa5bf3">revamped</a> and <a href="https://github.com/radarroark/xit/commit/f312357078c5184ab0068d6ff5d07f405af212dd">fixed</a> the http code, because it was quite badly broken for more complex fetches. Hopefully it will now be as reliable as the ssh code, which is inherently easier to get right due to its simplicity (the ssh client does most of the work, after all).</p>
-  <p>After the above-mentioned performance fixes, I felt comfortable <a href="https://github.com/radarroark/xit/commit/ae08487e7dd0f340f64613e4eac8a8649105a367">re-enabling</a> compression on text chunks. Previously, I had disabled it because patch generation was so slow, I didn't want to slow it down more with compression. It is now enabled, though xit repos will normally still take up much more space than git repos; there are plenty more optimizations coming.</p>
-  <p>Lastly, I've received a slew of great PRs from my first contributor, and <a href="https://github.com/radarroark/xit/commit/927def28698d516ba720c36cd3a9b4bba03b4a97">this</a> one is worth noting. When you enable patch-based merging with `xit patch on`, it now generates the necessary patches at merge time rather than right away. If you actually want to generate them all in advance, you can do `xit patch all`. Generating them lazily is a great idea because it allows you to delay the work until it's needed, and only do the work for commits that are involved in the merge.</p>
+  <p>To solve this, I <a href="https://github.com/xit-vcs/xit/commit/68b0d14f96390d4360b2b821ab8b55a015368e19">first</a> made it read text files fully into memory for diffing. I <a href="https://github.com/xit-vcs/xit/commit/ba86653fcc78b79c95c67613c3fd23ee35749f19">then</a> updated the pack object reader to load objects from pack files entirely into memory (if they are below a certain file size). After these two changes, generating patches and cloning/fetching are much faster.</p>
+  <p>The UI got some love as well. I noticed that I neglected to show conflicts in the status TUI, and that has been <a href="https://github.com/xit-vcs/xit/commit/6ecbeae2fa64fc8052d7bbafc7466653efeff640">fixed</a>. A while later, I began <a href="https://github.com/xit-vcs/xit/commit/42eaf5a69f34087dc31d3c518d754738a35a3458">embedding</a> TUIs into my unit tests. Yes, I mean literally making assertions that embed the TUI in a big string. It's glorious...let's see you do that, GUI / web developers.</p>
+  <p>I also made some critical networking fixes recently. I <a href="https://github.com/xit-vcs/xit/commit/8a2da06faf00daf232f7420b9d032d9cfdaa5bf3">revamped</a> and <a href="https://github.com/xit-vcs/xit/commit/f312357078c5184ab0068d6ff5d07f405af212dd">fixed</a> the http code, because it was quite badly broken for more complex fetches. Hopefully it will now be as reliable as the ssh code, which is inherently easier to get right due to its simplicity (the ssh client does most of the work, after all).</p>
+  <p>After the above-mentioned performance fixes, I felt comfortable <a href="https://github.com/xit-vcs/xit/commit/ae08487e7dd0f340f64613e4eac8a8649105a367">re-enabling</a> compression on text chunks. Previously, I had disabled it because patch generation was so slow, I didn't want to slow it down more with compression. It is now enabled, though xit repos will normally still take up much more space than git repos; there are plenty more optimizations coming.</p>
+  <p>Lastly, I've received a slew of great PRs from my first contributor, and <a href="https://github.com/xit-vcs/xit/commit/927def28698d516ba720c36cd3a9b4bba03b4a97">this</a> one is worth noting. When you enable patch-based merging with `xit patch on`, it now generates the necessary patches at merge time rather than right away. If you actually want to generate them all in advance, you can do `xit patch all`. Generating them lazily is a great idea because it allows you to delay the work until it's needed, and only do the work for commits that are involved in the merge.</p>
   ]]></content>
  </entry>
 
  <entry>
   <title>the timelessness of TUIs</title>
-  <link href="https://radarroark.github.io/xit/the-timelessness-of-tuis.html" title="the-timelessness-of-tuis"/>
+  <link href="https://xit-vcs.github.io/xitlog/the-timelessness-of-tuis.html" title="the-timelessness-of-tuis"/>
   <id>urn:uuid:5b07b6b8-edc0-4446-8bc2-6e55cdb8f52d</id>
   <updated>2025-03-16T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
@@ -138,7 +138,7 @@
   <p>Limitations are a powerful catalyst for creativity. Curious people see limitations as an invitation to overcome them. Give a curious child a TI-83 and he will give you Space Invaders. Give him Minecraft and he will give you Roman aqueducts.</p>
   <p>Orson Welles put it succinctly: "The enemy of art is the absence of limitations." There is no better way to snuff creativity out of a man than to give him endless resources and no deadline. Often, your best work comes when you have the strictest constraints...like having 1980s computer hardware that could display a whopping 16 different colors:</p>
   <div data-node="dragon">Not visible in the RSS feed, sowwy.</div>
-  I'm making <a href="https://github.com/radarroark/xit">xit</a>, a version control system with a built-in TUI. It's still in its infancy but lately I've been working on the status view. If I were doing this in a GUI, I'd have spent a long time trying to decide how it should look, what controls to use, and so on. With a TUI, the decision paralysis goes away and you just do the dumb, simple thing:
+  I'm making <a href="https://github.com/xit-vcs/xit">xit</a>, a version control system with a built-in TUI. It's still in its infancy but lately I've been working on the status view. If I were doing this in a GUI, I'd have spent a long time trying to decide how it should look, what controls to use, and so on. With a TUI, the decision paralysis goes away and you just do the dumb, simple thing:
   <code> 
      ╔══════╗                                                                   
  log ║status║                                                                   
@@ -196,7 +196,7 @@
                     └───────────────────────────────────────────────────────────┘
   </code>
   <p>With TUIs, you have permission to just do the plain, boring thing, which is likely the thing that will keep working well many years from now when UI design trends change.</p>
-  <p>Since TUIs are just text, you can embed them direcly in your unit tests like <a href="https://github.com/radarroark/xit/blob/ba86653fcc78b79c95c67613c3fd23ee35749f19/src/test/repo.zig#L1351">this</a>! Your entire UI can be tested from within the rest of your tests. The tests also become very easy to skim for the reader because they provide such an immediate, visual representation of what state you're in.</p>
+  <p>Since TUIs are just text, you can embed them direcly in your unit tests like <a href="https://github.com/xit-vcs/xit/blob/ba86653fcc78b79c95c67613c3fd23ee35749f19/src/test/repo.zig#L1351">this</a>! Your entire UI can be tested from within the rest of your tests. The tests also become very easy to skim for the reader because they provide such an immediate, visual representation of what state you're in.</p>
   <p>For developer tools, TUIs are a no-brainer. It blows my mind that tools are still shipping with an entire web browser inside them just to render an interface for people who are already very comfortable with the terminal. With a TUI, I can use your tool over SSH, and I have total control over the colors and fonts it uses to render.</p>
   <p>TUIs are not a relic of the past. Every GUI framework you are using today will eventually become obsolete, while the simplicity and timelessness of TUIs will remain. GUIs get remembered, but <a href="https://www.youtube.com/shorts/U_pqRP-4hUc">TUIs never die</a>.</p>
   ]]></content>
@@ -204,28 +204,28 @@
 
  <entry>
   <title>devlog - optional patches, force push, symlinks and more</title>
-  <link href="https://radarroark.github.io/xit/devlog-optional-patches.html" title="devlog-optional-patches"/>
+  <link href="https://xit-vcs.github.io/xitlog/devlog-optional-patches.html" title="devlog-optional-patches"/>
   <id>urn:uuid:7aa7555a-0163-4590-b0f6-4da325dbd692</id>
   <updated>2025-03-13T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
-  <p>I got my first couple bug reports...mama, we made it! In <a href="https://github.com/radarroark/xit/issues/2">#2</a> I forgot that in <a href="https://github.com/radarroark/xitdb">xitdb</a>, data made in a transaction is temporarily mutable (an important perf optimization). It's fun forgetting how my own database works. In <a href="https://github.com/radarroark/xit/issues/4">#4</a> I forgot that when you merge, the base commit might not actually contain the conflicting file. Oops.</p>
-  <p>Shortly after that, I made patch-based merging <a href="https://github.com/radarroark/xit/commit/cfd04126c30a76c93d60b2c94e976fec81cae36e">optional</a>. It no longer generates patches during the clone, so cloning repos with large histories won't outlast the heat death of the universe. It still takes more time than git, because it is decompressing and chunking each object...I'm working on making it faster.</p>
-  <p>The next morning I woke up feeling particularly masochistic, so I decided to work on the pack file code. I noticed that some fetches were failing because the pack file from the server contained a <a href="https://git-scm.com/docs/pack-format">REF_DELTA</a> object, which is an deltified object whose base object is not in the pack and is expected to already be in the object store. I <a href="https://github.com/radarroark/xit/commit/940452a07f9dc7f299d200a3f5f6de29fa3b3738">fixed</a> the pack object reader to read these objects correctly, and then told my therapist all about it later that day.</p>
-  <p>After recovering from that eldritch horror I implemented <a href="https://github.com/radarroark/xit/commit/cc3467ca99118867462314b4ee940f99ac6bac8c">--abort</a> for merge and cherry-pick. This would normally be easy because it's essentially just `git reset --hard`, which xit already has in the form of `xit reset-dir`, but it wasn't correctly cleaning up the merge state. Now it is, and you can --abort all you want.</p>
-  <p>The next day I turned to `push`, because there was an issue that I doubt people would enjoy: all pushes were force pushes. This is because the server does not check if you're about to obliterate any commits...that check is done client-side by git! I <a href="https://github.com/radarroark/xit/commit/c9a5ebac3e81031ae536a41b567de6fbecb5d2b9">added</a> the check to xit, along with a -f flag to bypass it.</p>
-  <p>I had to get away from networking for a while so the next day I turned to the TUI. I added an obvious optimization that I should've added long ago: <a href="https://github.com/radarroark/xitui/commit/ac9e7f2dc65be4bc0b6e83d3f73bd609261db6bf">buffered</a> writing. The TUI on windows was particularly slow but now it's actually usable. I also made the TUI exit cleanly when <a href="https://github.com/radarroark/xitui/commit/3a5030476cf7e745357a26d9f541bb5c47b07d3c">ctrl+c</a> is entered.</p>
-  <p>And that brings me to yesterday, when I added support for <a href="https://github.com/radarroark/xit/commit/43035cf7a1e44d12f8f893fa42ab2fab30232a0e">symlinks</a>. That was WAY more annoying than I thought it would be. Fuck symlinks. Apparently windows agrees, because it doesn't even let you make them without admin privileges...so xit is forced to just make a normal file, just like git does. Speaking of windows, I also added a nice <a href="https://github.com/radarroark/xit/commit/26febda417fdac186984ba47aa4c09891397a7a6">fix</a> to prevent windows users from accidentally overwriting the file mode in a repo.</p>
+  <p>I got my first couple bug reports...mama, we made it! In <a href="https://github.com/xit-vcs/xit/issues/2">#2</a> I forgot that in <a href="https://github.com/xit-vcs/xitdb">xitdb</a>, data made in a transaction is temporarily mutable (an important perf optimization). It's fun forgetting how my own database works. In <a href="https://github.com/xit-vcs/xit/issues/4">#4</a> I forgot that when you merge, the base commit might not actually contain the conflicting file. Oops.</p>
+  <p>Shortly after that, I made patch-based merging <a href="https://github.com/xit-vcs/xit/commit/cfd04126c30a76c93d60b2c94e976fec81cae36e">optional</a>. It no longer generates patches during the clone, so cloning repos with large histories won't outlast the heat death of the universe. It still takes more time than git, because it is decompressing and chunking each object...I'm working on making it faster.</p>
+  <p>The next morning I woke up feeling particularly masochistic, so I decided to work on the pack file code. I noticed that some fetches were failing because the pack file from the server contained a <a href="https://git-scm.com/docs/pack-format">REF_DELTA</a> object, which is an deltified object whose base object is not in the pack and is expected to already be in the object store. I <a href="https://github.com/xit-vcs/xit/commit/940452a07f9dc7f299d200a3f5f6de29fa3b3738">fixed</a> the pack object reader to read these objects correctly, and then told my therapist all about it later that day.</p>
+  <p>After recovering from that eldritch horror I implemented <a href="https://github.com/xit-vcs/xit/commit/cc3467ca99118867462314b4ee940f99ac6bac8c">--abort</a> for merge and cherry-pick. This would normally be easy because it's essentially just `git reset --hard`, which xit already has in the form of `xit reset-dir`, but it wasn't correctly cleaning up the merge state. Now it is, and you can --abort all you want.</p>
+  <p>The next day I turned to `push`, because there was an issue that I doubt people would enjoy: all pushes were force pushes. This is because the server does not check if you're about to obliterate any commits...that check is done client-side by git! I <a href="https://github.com/xit-vcs/xit/commit/c9a5ebac3e81031ae536a41b567de6fbecb5d2b9">added</a> the check to xit, along with a -f flag to bypass it.</p>
+  <p>I had to get away from networking for a while so the next day I turned to the TUI. I added an obvious optimization that I should've added long ago: <a href="https://github.com/xit-vcs/xitui/commit/ac9e7f2dc65be4bc0b6e83d3f73bd609261db6bf">buffered</a> writing. The TUI on windows was particularly slow but now it's actually usable. I also made the TUI exit cleanly when <a href="https://github.com/xit-vcs/xitui/commit/3a5030476cf7e745357a26d9f541bb5c47b07d3c">ctrl+c</a> is entered.</p>
+  <p>And that brings me to yesterday, when I added support for <a href="https://github.com/xit-vcs/xit/commit/43035cf7a1e44d12f8f893fa42ab2fab30232a0e">symlinks</a>. That was WAY more annoying than I thought it would be. Fuck symlinks. Apparently windows agrees, because it doesn't even let you make them without admin privileges...so xit is forced to just make a normal file, just like git does. Speaking of windows, I also added a nice <a href="https://github.com/xit-vcs/xit/commit/26febda417fdac186984ba47aa4c09891397a7a6">fix</a> to prevent windows users from accidentally overwriting the file mode in a repo.</p>
   <p>That was just one week of work! Oh...and this blog is no longer wrapping every single character in span tags. That really triggered a lot of web developers. This is what happens when you put a Zig programmer in charge of HTML. I hope you all learned a valuable lesson.</p>
   ]]></content>
  </entry>
 
  <entry>
   <title>xit is coming</title>
-  <link href="https://radarroark.github.io/xit/xit-is-coming.html" title="xit-is-coming"/>
+  <link href="https://xit-vcs.github.io/xitlog/xit-is-coming.html" title="xit-is-coming"/>
   <id>urn:uuid:67d94c95-dff4-468b-9c8d-c13d1a12dc04</id>
   <updated>2025-03-04T00:00:00Z</updated>
   <content type="html" xml:lang="en"><![CDATA[
-  <p>I'm working on a new version control system called <a href="https://github.com/radarroark/xit">xit</a> (pronounced like "zit"). To paraphrase JFK: I do this not because it is easy...but because I thought it would be easy. It is hilarious how much I misjudged how hard this would be. Nonetheless, here are the main features:</p>
+  <p>I'm working on a new version control system called <a href="https://github.com/xit-vcs/xit">xit</a> (pronounced like "zit"). To paraphrase JFK: I do this not because it is easy...but because I thought it would be easy. It is hilarious how much I misjudged how hard this would be. Nonetheless, here are the main features:</p>
   <p>1. Compatible with git hosts. You can push/pull/clone with Github and other git hosts, and nobody will even know you're using xit. I spent all of this past winter implementing the git protocol, and contrary to popular belief I am not perfect, so PLEASE REPORT BUGS!</p>
   <p>2. Combine snapshot-based and patch-based version control. When you merge or cherry-pick with xit, it uses patch-based merging, which should be more reliable and lead to fewer merge conflicts than git's three-way merge. Once again, until it sees more real-world use you should temper expectations.</p>
   <p>3. Built-in text user interface (TUI). If you just launch `xit` in a repo with no extra arguments, it will launch a TUI where you can browse commits and view the status of all uncommitted changes. Eventually the TUI will expose *all* the functionality of xit, including making commits and performing merges, but I'm not quite there yet.</p>
