@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const xitui = @import("xitui");
 const term = xitui.terminal;
 const wgt = xitui.widget;
@@ -7,41 +8,51 @@ const inp = xitui.input;
 const Grid = xitui.grid.Grid;
 const Focus = xitui.focus.Focus;
 
+const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
+    struct {
+        extern fn consoleLog(arg: [*]const u8, len: u32) void;
+        extern fn setHtml(arg: [*]const u8, len: u32) void;
+        extern fn addElem(arg: [*]const u8, len: u32, id: u32, x: u32, y: u32, width: u32, height: u32) void;
+
+        var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
+
+        fn start() void {
+            var fba = std.heap.FixedBufferAllocator.init(&buffer);
+            const html = generateHtml(fba.allocator()) catch |err| switch (err) {
+                error.OutOfMemory => {
+                    consoleLogZ("out of memory");
+                    return;
+                },
+                else => {
+                    consoleLogZ("error");
+                    return;
+                },
+            };
+            setHtmlZ(html);
+        }
+
+        fn consoleLogZ(arg: []const u8) void {
+            consoleLog(arg.ptr, @intCast(arg.len));
+        }
+
+        fn setHtmlZ(arg: []const u8) void {
+            setHtml(arg.ptr, @intCast(arg.len));
+        }
+
+        fn addElemZ(arg: []const u8, id: u32, x: u32, y: u32, width: u32, height: u32) void {
+            addElem(arg.ptr, @intCast(arg.len), id, x, y, width, height);
+        }
+    }
+else
+    struct {};
+
 export fn start() void {
-    startZ() catch |err| switch (err) {
-        error.OutOfMemory => {
-            consoleLogZ("out of memory");
-            return;
-        },
-        else => {
-            consoleLogZ("error");
-            return;
-        },
-    };
+    if (builtin.cpu.arch == .wasm32) {
+        ExportedFunctions.start();
+    }
 }
 
-extern fn consoleLog(arg: [*]const u8, len: u32) void;
-extern fn setHtml(arg: [*]const u8, len: u32) void;
-extern fn addElem(arg: [*]const u8, len: u32, id: u32, x: u32, y: u32, width: u32, height: u32) void;
-
-fn consoleLogZ(arg: []const u8) void {
-    consoleLog(arg.ptr, arg.len);
-}
-
-fn setHtmlZ(arg: []const u8) void {
-    setHtml(arg.ptr, arg.len);
-}
-
-fn addElemZ(arg: []const u8, id: u32, x: u32, y: u32, width: u32, height: u32) void {
-    addElem(arg.ptr, arg.len, id, x, y, width, height);
-}
-
-var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
-
-fn startZ() !void {
-    var fba = std.heap.FixedBufferAllocator.init(&buffer);
-    const allocator = fba.allocator();
-
+pub fn generateHtml(allocator: std.mem.Allocator) ![]const u8 {
     // init root widget
     var root = Widget{ .widget_list = try WidgetList.init(allocator) };
     defer root.deinit();
@@ -56,12 +67,15 @@ fn startZ() !void {
     }
 
     var output = std.ArrayList([]const u8){};
+    defer output.deinit(allocator);
+
+    const grid_str = try root.getGrid().?.toString(allocator);
+    defer allocator.free(grid_str);
+
+    try output.append(allocator, grid_str);
 
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
-
-    const grid_str = try root.getGrid().?.toString(arena.allocator());
-    try output.append(arena.allocator(), grid_str);
 
     var iter = root.getFocus().children.iterator();
     while (iter.next()) |entry| {
@@ -79,15 +93,13 @@ fn startZ() !void {
                         (child.rect.size.height - 2) * 22,
                     },
                 );
-                try output.append(arena.allocator(), html);
+                try output.append(allocator, html);
             },
             else => {},
         }
     }
 
-    const html = try std.mem.join(arena.allocator(), "", output.items);
-
-    setHtmlZ(html);
+    return try std.mem.join(allocator, "", output.items);
 }
 
 const Widget = union(enum) {
