@@ -24,9 +24,10 @@ pub fn build(b: *std.Build) void {
         exe.export_memory = true;
         exe.stack_size = std.wasm.page_size;
 
-        const number_of_pages = 16;
-        exe.initial_memory = std.wasm.page_size * number_of_pages;
-        exe.max_memory = std.wasm.page_size * number_of_pages;
+        const initial_pages = 16;
+        const max_pages = 256;
+        exe.initial_memory = std.wasm.page_size * initial_pages;
+        exe.max_memory = std.wasm.page_size * max_pages;
 
         b.installArtifact(exe);
     }

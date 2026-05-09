@@ -13,20 +13,40 @@ const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
         extern fn _consoleLog(arg: [*]const u8, len: u32) void;
         extern fn _setHtml(arg: [*]const u8, len: u32) void;
 
-        var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
+        const allocator = std.heap.wasm_allocator;
 
-        fn start() void {
-            var fba = std.heap.FixedBufferAllocator.init(&buffer);
-            const html = generateHtml(fba.allocator()) catch |err| switch (err) {
-                error.OutOfMemory => {
-                    consoleLog("out of memory");
-                    return;
-                },
-                else => {
-                    consoleLog("error");
-                    return;
-                },
-            };
+        var root: Widget = undefined;
+
+        fn start() !void {
+            // init root widget
+            root = Widget{ .widget_list = try WidgetList.init(allocator) };
+            errdefer root.deinit();
+
+            // set initial focus for root widget
+            try root.build(.{
+                .min_size = .{ .width = null, .height = null },
+                .max_size = .{ .width = null, .height = null },
+            }, root.getFocus());
+            if (root.getFocus().child_id) |child_id| {
+                try root.getFocus().setFocus(child_id);
+            }
+
+            // set the html
+            const html = try generateHtml(allocator, &root);
+            defer allocator.free(html);
+            setHtml(html);
+        }
+
+        fn tick() !void {
+            // rebuild widget
+            try root.build(.{
+                .min_size = .{ .width = null, .height = null },
+                .max_size = .{ .width = null, .height = null },
+            }, root.getFocus());
+
+            // set the html
+            const html = try generateHtml(allocator, &root);
+            defer allocator.free(html);
             setHtml(html);
         }
 
@@ -43,24 +63,42 @@ else
 
 export fn start() void {
     if (builtin.cpu.arch == .wasm32) {
-        ExportedFunctions.start();
+        ExportedFunctions.start() catch |err| {
+            var buf: [256]u8 = undefined;
+            const str = std.fmt.bufPrint(&buf, "start: {}", .{err}) catch unreachable;
+            ExportedFunctions.consoleLog(str);
+        };
     }
 }
 
-pub fn generateHtml(allocator: std.mem.Allocator) ![]const u8 {
-    // init root widget
-    var root = Widget{ .widget_list = try WidgetList.init(allocator) };
-    defer root.deinit();
-
-    // set initial focus for root widget
-    try root.build(.{
-        .min_size = .{ .width = null, .height = null },
-        .max_size = .{ .width = null, .height = null },
-    }, root.getFocus());
-    if (root.getFocus().child_id) |child_id| {
-        try root.getFocus().setFocus(child_id);
+export fn tick() bool {
+    if (builtin.cpu.arch == .wasm32) {
+        ExportedFunctions.tick() catch |err| {
+            var buf: [256]u8 = undefined;
+            const str = std.fmt.bufPrint(&buf, "tick: {}", .{err}) catch unreachable;
+            ExportedFunctions.consoleLog(str);
+            return false;
+        };
     }
+    return true;
+}
 
+export fn _onKeyDown(key_code: u32) void {
+    if (builtin.cpu.arch == .wasm32) {
+        onKeyDown(key_code) catch ExportedFunctions.consoleLog("error");
+    }
+}
+
+fn onKeyDown(key_code: u32) !void {
+    const key: inp.Key = switch (key_code) {
+        38 => .arrow_up,
+        40 => .arrow_down,
+        else => return,
+    };
+    try ExportedFunctions.root.input(key, ExportedFunctions.root.getFocus());
+}
+
+pub fn generateHtml(allocator: std.mem.Allocator, root: *Widget) ![]const u8 {
     var output: std.ArrayList([]const u8) = .empty;
     defer output.deinit(allocator);
 

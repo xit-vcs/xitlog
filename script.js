@@ -17,5 +17,16 @@ let wasmInstance;
 
 WebAssembly.instantiateStreaming(fetch("zig-out/bin/xitlog.wasm"), importObject).then((result) => {
     wasmInstance = result.instance;
-    result.instance.exports.start();
+    wasmInstance.exports.start();
+    document.addEventListener("keydown", (event) => {
+        wasmInstance.exports._onKeyDown(event.keyCode);
+    });
+
+    function tick() {
+        if (wasmInstance.exports.tick()) {
+            requestAnimationFrame(tick);
+        }
+    }
+
+    requestAnimationFrame(tick);
 });
