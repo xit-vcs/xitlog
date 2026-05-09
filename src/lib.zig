@@ -66,7 +66,7 @@ pub fn generateHtml(allocator: std.mem.Allocator) ![]const u8 {
         try root.getFocus().setFocus(child_id);
     }
 
-    var output = std.ArrayList([]const u8){};
+    var output: std.ArrayList([]const u8) = .empty;
     defer output.deinit(allocator);
 
     const grid_str = try root.getGrid().?.toString(allocator);
@@ -171,14 +171,14 @@ const WidgetList = struct {
             var text_box = try wgt.TextBox(Widget).init(allocator, "this is a TextBox", .single, .none);
             errdefer text_box.deinit();
             text_box.getFocus().focusable = true;
-            try inner_box.children.put(text_box.getFocus().id, .{ .widget = .{ .text_box = text_box }, .rect = null, .min_size = null });
+            try inner_box.children.put(allocator, text_box.getFocus().id, .{ .widget = .{ .text_box = text_box }, .rect = null, .min_size = null });
         }
 
         {
             var text_box = try wgt.TextBox(Widget).init(allocator, "this is a\nmulti-line TextBox", .single, .none);
             errdefer text_box.deinit();
             text_box.getFocus().focusable = true;
-            try inner_box.children.put(text_box.getFocus().id, .{ .widget = .{ .text_box = text_box }, .rect = null, .min_size = null });
+            try inner_box.children.put(allocator, text_box.getFocus().id, .{ .widget = .{ .text_box = text_box }, .rect = null, .min_size = null });
         }
 
         if (inner_box.children.count() > 0) {
