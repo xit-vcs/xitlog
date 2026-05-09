@@ -200,7 +200,51 @@ const WidgetList = struct {
     }
 
     pub fn input(self: *WidgetList, key: inp.Key, root_focus: *Focus) !void {
-        _ = .{ self, key, root_focus };
+        if (self.getFocus().child_id) |child_id| {
+            const children = &self.scroll.child.box.children;
+            if (children.getIndex(child_id)) |current_index| {
+                var index = current_index;
+
+                switch (key) {
+                    .arrow_up => {
+                        index -|= 1;
+                    },
+                    .arrow_down => {
+                        if (index + 1 < children.count()) {
+                            index += 1;
+                        }
+                    },
+                    .home => {
+                        index = 0;
+                    },
+                    .end => {
+                        if (children.count() > 0) {
+                            index = children.count() - 1;
+                        }
+                    },
+                    .page_up => {
+                        if (self.getGrid()) |grid| {
+                            const half_count = (grid.size.height / 3) / 2;
+                            index -|= half_count;
+                        }
+                    },
+                    .page_down => {
+                        if (self.getGrid()) |grid| {
+                            if (children.count() > 0) {
+                                const half_count = (grid.size.height / 3) / 2;
+                                index = @min(index + half_count, children.count() - 1);
+                            }
+                        }
+                    },
+                    else => {},
+                }
+
+                if (index != current_index) {
+                    try root_focus.setFocus(children.keys()[index]);
+                    self.updateScroll(index);
+                }
+            }
+        }
     }
 
     pub fn clearGrid(self: *WidgetList) void {
