@@ -12,7 +12,6 @@ const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
     struct {
         extern fn consoleLog(arg: [*]const u8, len: u32) void;
         extern fn setHtml(arg: [*]const u8, len: u32) void;
-        extern fn addElem(arg: [*]const u8, len: u32, id: u32, x: u32, y: u32, width: u32, height: u32) void;
 
         var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
 
@@ -37,10 +36,6 @@ const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
 
         fn setHtmlZ(arg: []const u8) void {
             setHtml(arg.ptr, @intCast(arg.len));
-        }
-
-        fn addElemZ(arg: []const u8, id: u32, x: u32, y: u32, width: u32, height: u32) void {
-            addElem(arg.ptr, @intCast(arg.len), id, x, y, width, height);
         }
     }
 else
