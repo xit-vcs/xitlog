@@ -10,8 +10,8 @@ const Focus = xitui.focus.Focus;
 
 const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
     struct {
-        extern fn consoleLog(arg: [*]const u8, len: u32) void;
-        extern fn setHtml(arg: [*]const u8, len: u32) void;
+        extern fn _consoleLog(arg: [*]const u8, len: u32) void;
+        extern fn _setHtml(arg: [*]const u8, len: u32) void;
 
         var buffer: [512 * 1024]u8 = undefined; // 512KB static buffer
 
@@ -19,23 +19,23 @@ const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
             var fba = std.heap.FixedBufferAllocator.init(&buffer);
             const html = generateHtml(fba.allocator()) catch |err| switch (err) {
                 error.OutOfMemory => {
-                    consoleLogZ("out of memory");
+                    consoleLog("out of memory");
                     return;
                 },
                 else => {
-                    consoleLogZ("error");
+                    consoleLog("error");
                     return;
                 },
             };
-            setHtmlZ(html);
+            setHtml(html);
         }
 
-        fn consoleLogZ(arg: []const u8) void {
-            consoleLog(arg.ptr, @intCast(arg.len));
+        fn consoleLog(arg: []const u8) void {
+            _consoleLog(arg.ptr, @intCast(arg.len));
         }
 
-        fn setHtmlZ(arg: []const u8) void {
-            setHtml(arg.ptr, @intCast(arg.len));
+        fn setHtml(arg: []const u8) void {
+            _setHtml(arg.ptr, @intCast(arg.len));
         }
     }
 else
