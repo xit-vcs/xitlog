@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const xitui = @import("xitui");
+pub const xitui = @import("xitui");
 const term = xitui.terminal;
 const wgt = xitui.widget;
 const layout = xitui.layout;
@@ -97,7 +97,7 @@ pub fn generateHtml(allocator: std.mem.Allocator) ![]const u8 {
     return try std.mem.join(allocator, "", output.items);
 }
 
-const Widget = union(enum) {
+pub const Widget = union(enum) {
     text: wgt.Text(Widget),
     box: wgt.Box(Widget),
     text_box: wgt.TextBox(Widget),
@@ -141,7 +141,7 @@ const Widget = union(enum) {
     }
 };
 
-const WidgetList = struct {
+pub const WidgetList = struct {
     allocator: std.mem.Allocator,
     scroll: wgt.Scroll(Widget),
 
