@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>XITLOG - devlog support 0.16 and server</title>
+<style>
+html {
+  background-color: rgba(0, 50, 70, 1.0);
+  color: rgba(200, 200, 200, 1.0);
+  padding: 10px;
+}
+
+@font-face {
+  font-family: '3270';
+  src: url('term.ttf') format('truetype');
+}
+
+#grid {
+  font-family: '3270', monospace;
+  white-space: pre;
+  font-size: 22px;
+  line-height: 22px;
+}
+
+#grid a {
+  color: white;
+}
+</style>
+</head>
+<body>
+<div id="grid"><a href='index.html'>&lt;- HOME</a> - a blog about <a href='https://github.com/xit-vcs/xit'>xit</a>                                             <a href='feed.xml'>RSS</a>
+
+██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗ 
+╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝ 
+ ╚███╔╝ ██║   ██║   ██║     ██║   ██║██║  ███╗
+ ██╔██╗ ██║   ██║   ██║     ██║   ██║██║   ██║
+██╔╝ ██╗██║   ██║   ███████╗╚██████╔╝╚██████╔╝
+╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝ 
+
+DEVLOG - SUPPORTING ZIG 0.16 AND SERVER-SIDE NETWORKING -
+April 14, 2026
+
+Today Zig 0.16 was <a href='https://ziglang.org/download/0.16.0/release-notes.html'>released</a>, which means I could finally
+merge two huge changes to the master branch of xit: support
+for 0.16 and support for server-side networking. Each of
+these changes took months for me to do, so it's a huge
+relief to finally merge them.
+
+The <a href='https://github.com/xit-vcs/xit/commit/093cf4ad337fd2ab67bb9da748bdc731cc7f0de3'>first commit</a> adds support for 0.16. This was a
+massive effort, as you can see from the number of lines
+changed, because xit makes extensive use of the Zig
+standard library. In addition to Zig's new Io interface,
+there were many breaking changes in the std lib that had to
+be accounted for.
+
+The <a href='https://github.com/xit-vcs/xit/commit/2907b755ffdc8387a6c310a90968906f611dcf7a'>second commit</a> adds support for server-side
+networking. In particular, it adds equivalents to the
+following git commands: upload-pack, receive-pack, and
+http-backend. These are mostly intended to be drop-in
+replacements.
+
+The point of the server-side commands is to allow you to
+run a server that stores repos in the xit repo format.
+These commands *also* work with git clients, not just xit
+clients. I think the xit repo format will prove to enable a
+lot of things like server-side merging with patches,
+supporting large files, and supporting undo.
+
+I have a lot of plans for xit, but in the short term I'm
+focusing on my health. For reasons completely unrelated to
+this project, my health declined a lot in the past year.
+Lately I've been spending more time cooking my own food,
+working out, and walking. I think this coming year is going
+to be better for me than the last, and better for xit too.
+
+</div>
+</body>
+</html>
