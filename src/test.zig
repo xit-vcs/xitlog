@@ -1,14 +1,10 @@
 const std = @import("std");
 const xitlog = @import("xitlog");
 
+const feed_xml = @embedFile("assets/feed.xml");
+
 test "generate html" {
-    const io = std.testing.io;
     const allocator = std.testing.allocator;
-
-    const cwd = std.Io.Dir.cwd();
-
-    const feed_xml = try cwd.readFileAlloc(io, "html/feed.xml", allocator, .unlimited);
-    defer allocator.free(feed_xml);
 
     var feed = try xitlog.Feed.parse(allocator, feed_xml);
     defer feed.deinit();

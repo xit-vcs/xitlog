@@ -1,11 +1,10 @@
 const std = @import("std");
-const build_options = @import("build_options");
 const xitlog = @import("xitlog");
 const xitui = xitlog.xitui;
 const inp = xitui.input;
 
 const allocator = std.heap.wasm_allocator;
-const feed_xml = build_options.feed_xml;
+const feed_xml = @embedFile("assets/feed.xml");
 
 var root: ?xitlog.Widget = null;
 

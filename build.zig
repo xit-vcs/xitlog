@@ -22,16 +22,6 @@ pub fn build(b: *std.Build) void {
         });
         exe.root_module.addImport("xitlog", xitlog);
 
-        const wasm_options = b.addOptions();
-        const feed_xml = std.Io.Dir.cwd().readFileAlloc(
-            b.graph.io,
-            "html/feed.xml",
-            b.allocator,
-            .limited(10 * 1024 * 1024),
-        ) catch @panic("unable to read html/feed.xml");
-        wasm_options.addOption([]const u8, "feed_xml", feed_xml);
-        exe.root_module.addOptions("build_options", wasm_options);
-
         exe.global_base = 6560;
         exe.entry = .disabled;
         exe.rdynamic = true;

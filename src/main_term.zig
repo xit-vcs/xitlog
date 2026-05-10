@@ -6,6 +6,8 @@ const term = xitui.terminal;
 const layout = xitui.layout;
 const Grid = xitui.grid.Grid;
 
+const feed_xml = @embedFile("assets/feed.xml");
+
 pub fn main() !void {
     // init allocator
     var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -18,11 +20,6 @@ pub fn main() !void {
     var threaded: std.Io.Threaded = .init_single_threaded;
     defer threaded.deinit();
     const io = threaded.io();
-    const cwd = std.Io.Dir.cwd();
-
-    const feed_xml = try cwd.readFileAlloc(io, "html/feed.xml", allocator, .unlimited);
-    defer allocator.free(feed_xml);
-
     var feed = try xitlog.Feed.parse(allocator, feed_xml);
     defer feed.deinit();
 

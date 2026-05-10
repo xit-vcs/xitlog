@@ -2,6 +2,9 @@ const std = @import("std");
 const builtin = @import("builtin");
 const xitlog = @import("xitlog");
 
+const feed_xml = @embedFile("assets/feed.xml");
+const template = @embedFile("assets/index_static.html");
+
 pub fn main() !void {
     var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
     const allocator = if (builtin.mode == .Debug) debug_allocator.allocator() else std.heap.smp_allocator;
@@ -14,13 +17,8 @@ pub fn main() !void {
     const io = threaded.io();
     const cwd = std.Io.Dir.cwd();
 
-    const feed_xml = try cwd.readFileAlloc(io, "html/feed.xml", allocator, .unlimited);
-    defer allocator.free(feed_xml);
-
     var feed = try xitlog.Feed.parse(allocator, feed_xml);
     defer feed.deinit();
-
-    const template = @embedFile("assets/index_static.html");
 
     {
         const html = try xitlog.generatePageHtml(allocator, template, feed, "index");
