@@ -36,13 +36,9 @@ pub fn build(b: *std.Build) void {
 
         b.installArtifact(exe);
 
-        const copy_wasm = b.addUpdateSourceFiles();
-        copy_wasm.addCopyFileToSource(exe.getEmittedBin(), "wasm/xitlog.wasm");
-
         const html_step = b.step("wasm", "Generate the wasm");
         html_step.dependOn(&exe.step);
         html_step.dependOn(b.getInstallStep());
-        html_step.dependOn(&copy_wasm.step);
     }
 
     const target = b.standardTargetOptions(.{});
