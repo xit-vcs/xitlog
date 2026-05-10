@@ -1,102 +1,10 @@
 const std = @import("std");
-const builtin = @import("builtin");
 pub const xitui = @import("xitui");
-const term = xitui.terminal;
 const wgt = xitui.widget;
 const layout = xitui.layout;
 const inp = xitui.input;
 const Grid = xitui.grid.Grid;
 const Focus = xitui.focus.Focus;
-
-const ExportedFunctions = if (builtin.cpu.arch == .wasm32)
-    struct {
-        extern fn _consoleLog(arg: [*]const u8, len: u32) void;
-        extern fn _setHtml(arg: [*]const u8, len: u32) void;
-
-        const allocator = std.heap.wasm_allocator;
-
-        var root: Widget = undefined;
-
-        fn start() !void {
-            // init root widget
-            root = Widget{ .widget_list = try WidgetList.init(allocator) };
-            errdefer root.deinit();
-
-            // set initial focus for root widget
-            try root.build(.{
-                .min_size = .{ .width = null, .height = null },
-                .max_size = .{ .width = null, .height = null },
-            }, root.getFocus());
-            if (root.getFocus().child_id) |child_id| {
-                try root.getFocus().setFocus(child_id);
-            }
-
-            // set the html
-            const html = try generateHtml(allocator, &root);
-            defer allocator.free(html);
-            setHtml(html);
-        }
-
-        fn tick() !void {
-            // rebuild widget
-            try root.build(.{
-                .min_size = .{ .width = null, .height = null },
-                .max_size = .{ .width = null, .height = null },
-            }, root.getFocus());
-
-            // set the html
-            const html = try generateHtml(allocator, &root);
-            defer allocator.free(html);
-            setHtml(html);
-        }
-
-        fn consoleLog(arg: []const u8) void {
-            _consoleLog(arg.ptr, @intCast(arg.len));
-        }
-
-        fn setHtml(arg: []const u8) void {
-            _setHtml(arg.ptr, @intCast(arg.len));
-        }
-    }
-else
-    struct {};
-
-export fn start() void {
-    if (builtin.cpu.arch == .wasm32) {
-        ExportedFunctions.start() catch |err| {
-            var buf: [256]u8 = undefined;
-            const str = std.fmt.bufPrint(&buf, "start: {}", .{err}) catch unreachable;
-            ExportedFunctions.consoleLog(str);
-        };
-    }
-}
-
-export fn tick() bool {
-    if (builtin.cpu.arch == .wasm32) {
-        ExportedFunctions.tick() catch |err| {
-            var buf: [256]u8 = undefined;
-            const str = std.fmt.bufPrint(&buf, "tick: {}", .{err}) catch unreachable;
-            ExportedFunctions.consoleLog(str);
-            return false;
-        };
-    }
-    return true;
-}
-
-export fn _onKeyDown(key_code: u32) void {
-    if (builtin.cpu.arch == .wasm32) {
-        onKeyDown(key_code) catch ExportedFunctions.consoleLog("error");
-    }
-}
-
-fn onKeyDown(key_code: u32) !void {
-    const key: inp.Key = switch (key_code) {
-        38 => .arrow_up,
-        40 => .arrow_down,
-        else => return,
-    };
-    try ExportedFunctions.root.input(key, ExportedFunctions.root.getFocus());
-}
 
 pub fn generateHtml(allocator: std.mem.Allocator, root: *Widget) ![]const u8 {
     var output: std.ArrayList([]const u8) = .empty;
@@ -107,28 +15,31 @@ pub fn generateHtml(allocator: std.mem.Allocator, root: *Widget) ![]const u8 {
 
     try output.append(allocator, grid_str);
 
-    var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    // an experiment to overlay certain widgets with html elements for accessibility
+    if (false) {
+        var arena = std.heap.ArenaAllocator.init(allocator);
+        defer arena.deinit();
 
-    var iter = root.getFocus().children.iterator();
-    while (iter.next()) |entry| {
-        const child = entry.value_ptr.*;
-        switch (child.focus.kind) {
-            .text_box => {
-                const html = try std.fmt.allocPrint(
-                    arena.allocator(),
-                    "<div class='{s}' style='position: absolute; top: {}px; left: {}px; width: {}px; height: {}px;'></div>",
-                    .{
-                        @tagName(child.focus.kind),
-                        (child.rect.y + 1) * 22,
-                        (child.rect.x + 1) * 12,
-                        (child.rect.size.width - 2) * 12,
-                        (child.rect.size.height - 2) * 22,
-                    },
-                );
-                try output.append(allocator, html);
-            },
-            else => {},
+        var iter = root.getFocus().children.iterator();
+        while (iter.next()) |entry| {
+            const child = entry.value_ptr.*;
+            switch (child.focus.kind) {
+                .text_box => {
+                    const html = try std.fmt.allocPrint(
+                        arena.allocator(),
+                        "<div class='{s}' style='position: absolute; top: {}px; left: {}px; width: {}px; height: {}px;'></div>",
+                        .{
+                            @tagName(child.focus.kind),
+                            (child.rect.y + 1) * 22,
+                            (child.rect.x + 1) * 12,
+                            (child.rect.size.width - 2) * 12,
+                            (child.rect.size.height - 2) * 22,
+                        },
+                    );
+                    try output.append(allocator, html);
+                },
+                else => {},
+            }
         }
     }
 

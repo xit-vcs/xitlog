@@ -1,6 +1,11 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
+    const xitlog = b.addModule("xitlog", .{
+        .root_source_file = b.path("src/lib.zig"),
+    });
+    xitlog.addImport("xitui", b.dependency("xitui", .{}).module("xitui"));
+
     {
         const target = b.resolveTargetQuery(.{
             .cpu_arch = .wasm32,
@@ -10,12 +15,12 @@ pub fn build(b: *std.Build) void {
         const exe = b.addExecutable(.{
             .name = "xitlog",
             .root_module = b.createModule(.{
-                .root_source_file = b.path("src/lib.zig"),
+                .root_source_file = b.path("src/main_wasm.zig"),
                 .target = target,
                 .optimize = .ReleaseSmall,
             }),
         });
-        exe.root_module.addImport("xitui", b.dependency("xitui", .{}).module("xitui"));
+        exe.root_module.addImport("xitlog", xitlog);
 
         exe.global_base = 6560;
         exe.entry = .disabled;
@@ -32,11 +37,6 @@ pub fn build(b: *std.Build) void {
         b.installArtifact(exe);
     }
 
-    const xitlog = b.addModule("xitlog", .{
-        .root_source_file = b.path("src/lib.zig"),
-    });
-    xitlog.addImport("xitui", b.dependency("xitui", .{}).module("xitui"));
-
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
@@ -44,7 +44,7 @@ pub fn build(b: *std.Build) void {
         const exe = b.addExecutable(.{
             .name = "xitlog",
             .root_module = b.createModule(.{
-                .root_source_file = b.path("src/main.zig"),
+                .root_source_file = b.path("src/main_term.zig"),
                 .target = target,
                 .optimize = optimize,
             }),
