@@ -2,9 +2,18 @@ const std = @import("std");
 const xitlog = @import("xitlog");
 
 test "generate html" {
+    const io = std.testing.io;
     const allocator = std.testing.allocator;
 
-    var root = xitlog.Widget{ .widget_list = try xitlog.WidgetList.init(allocator) };
+    const cwd = std.Io.Dir.cwd();
+
+    const feed_xml = try cwd.readFileAlloc(io, "html/feed.xml", allocator, .unlimited);
+    defer allocator.free(feed_xml);
+
+    var feed = try xitlog.Feed.parse(allocator, feed_xml);
+    defer feed.deinit();
+
+    var root = xitlog.Widget{ .blog_page = try xitlog.BlogPage.initIndex(allocator, feed) };
     defer root.deinit();
 
     // set initial focus for root widget

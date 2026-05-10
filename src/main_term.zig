@@ -3,11 +3,8 @@ const builtin = @import("builtin");
 const xitlog = @import("xitlog");
 const xitui = xitlog.xitui;
 const term = xitui.terminal;
-const wgt = xitui.widget;
 const layout = xitui.layout;
-const inp = xitui.input;
 const Grid = xitui.grid.Grid;
-const Focus = xitui.focus.Focus;
 
 pub fn main() !void {
     // init allocator
@@ -21,9 +18,19 @@ pub fn main() !void {
     var threaded: std.Io.Threaded = .init_single_threaded;
     defer threaded.deinit();
     const io = threaded.io();
+    const cwd = std.Io.Dir.cwd();
+
+    const feed_xml = try cwd.readFileAlloc(io, "html/feed.xml", allocator, .unlimited);
+    defer allocator.free(feed_xml);
+
+    var feed = try xitlog.Feed.parse(allocator, feed_xml);
+    defer feed.deinit();
 
     // init root widget
-    var root = xitlog.Widget{ .widget_list = try xitlog.WidgetList.init(allocator) };
+    const blog_page = try xitlog.BlogPage.initIndex(allocator, feed);
+    var root = xitlog.Widget{
+        .scroll = try xitui.widget.Scroll(xitlog.Widget).init(allocator, .{ .blog_page = blog_page }, .vert),
+    };
     defer root.deinit();
 
     // set initial focus for root widget

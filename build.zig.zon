@@ -10,7 +10,6 @@
     .paths = .{
         "build.zig",
         "build.zig.zon",
-        "deps",
         "src",
     },
     .fingerprint = 0x99e25d882d3c68f,

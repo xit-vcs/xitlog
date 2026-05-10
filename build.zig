@@ -22,6 +22,16 @@ pub fn build(b: *std.Build) void {
         });
         exe.root_module.addImport("xitlog", xitlog);
 
+        const wasm_options = b.addOptions();
+        const feed_xml = std.Io.Dir.cwd().readFileAlloc(
+            b.graph.io,
+            "html/feed.xml",
+            b.allocator,
+            .limited(10 * 1024 * 1024),
+        ) catch @panic("unable to read html/feed.xml");
+        wasm_options.addOption([]const u8, "feed_xml", feed_xml);
+        exe.root_module.addOptions("build_options", wasm_options);
+
         exe.global_base = 6560;
         exe.entry = .disabled;
         exe.rdynamic = true;
@@ -35,6 +45,14 @@ pub fn build(b: *std.Build) void {
         exe.max_memory = std.wasm.page_size * max_pages;
 
         b.installArtifact(exe);
+
+        const copy_wasm = b.addUpdateSourceFiles();
+        copy_wasm.addCopyFileToSource(exe.getEmittedBin(), "wasm/xitlog.wasm");
+
+        const html_step = b.step("wasm", "Generate the wasm");
+        html_step.dependOn(&exe.step);
+        html_step.dependOn(b.getInstallStep());
+        html_step.dependOn(&copy_wasm.step);
     }
 
     const target = b.standardTargetOptions(.{});
@@ -52,13 +70,34 @@ pub fn build(b: *std.Build) void {
         exe.root_module.addImport("xitlog", xitlog);
         b.installArtifact(exe);
 
+        const term_step = b.step("term", "Build the terminal version");
+        term_step.dependOn(&exe.step);
+        term_step.dependOn(b.getInstallStep());
+
         const run_cmd = b.addRunArtifact(exe);
         run_cmd.step.dependOn(b.getInstallStep());
         if (b.args) |args| {
             run_cmd.addArgs(args);
         }
-        const run_step = b.step("run", "Run the app");
+        const run_step = b.step("run", "Run the terminal version");
         run_step.dependOn(&run_cmd.step);
+    }
+
+    {
+        const exe = b.addExecutable(.{
+            .name = "xitlog-html",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src/main_html.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        exe.root_module.addImport("xitlog", xitlog);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.has_side_effects = true;
+        const html_step = b.step("html", "Generate static HTML files");
+        html_step.dependOn(&run_cmd.step);
     }
 
     {
