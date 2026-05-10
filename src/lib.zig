@@ -19,151 +19,6 @@ const header =
     \\╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝ 
 ;
 
-pub const Link = struct {
-    href: []const u8,
-};
-
-pub const Entry = struct {
-    title: []const u8,
-    slug: []const u8,
-    updated: []const u8,
-    content: []const u8,
-
-    fn deinit(self: Entry, allocator: std.mem.Allocator) void {
-        allocator.free(self.title);
-        allocator.free(self.slug);
-        allocator.free(self.updated);
-        allocator.free(self.content);
-    }
-};
-
-pub const Feed = struct {
-    allocator: std.mem.Allocator,
-    entries: []Entry,
-
-    pub fn parse(allocator: std.mem.Allocator, xml: []const u8) !Feed {
-        var entries: std.ArrayList(Entry) = .empty;
-        errdefer {
-            for (entries.items) |entry| entry.deinit(allocator);
-            entries.deinit(allocator);
-        }
-
-        var rest = xml;
-        while (findBetween(rest, "<entry>", "</entry>")) |entry_match| {
-            const entry_xml = entry_match.inner;
-            const title = try dupBetween(allocator, entry_xml, "<title>", "</title>");
-            errdefer allocator.free(title);
-            const updated = try dupBetween(allocator, entry_xml, "<updated>", "</updated>");
-            errdefer allocator.free(updated);
-            const content = try dupBetween(allocator, entry_xml, "<![CDATA[", "]]>");
-            errdefer allocator.free(content);
-
-            const link_tag = findTag(entry_xml, "link") orelse return error.MissingLink;
-            const slug = try dupAttr(allocator, link_tag, "title");
-            errdefer allocator.free(slug);
-
-            try entries.append(allocator, .{
-                .title = title,
-                .slug = slug,
-                .updated = updated,
-                .content = content,
-            });
-            rest = entry_match.after;
-        }
-
-        return .{
-            .allocator = allocator,
-            .entries = try entries.toOwnedSlice(allocator),
-        };
-    }
-
-    pub fn deinit(self: *Feed) void {
-        for (self.entries) |entry| entry.deinit(self.allocator);
-        self.allocator.free(self.entries);
-    }
-
-    pub fn findEntry(self: Feed, slug: []const u8) ?Entry {
-        for (self.entries) |entry| {
-            if (std.mem.eql(u8, entry.slug, slug)) return entry;
-        }
-        return null;
-    }
-};
-
-const Match = struct {
-    inner: []const u8,
-    after: []const u8,
-};
-
-pub fn generatePageHtml(
-    allocator: std.mem.Allocator,
-    template: []const u8,
-    feed: Feed,
-    page_name: []const u8,
-) ![]const u8 {
-    var root = if (std.mem.eql(u8, page_name, "index"))
-        Widget{ .blog_page = try BlogPage.initIndex(allocator, feed) }
-    else
-        Widget{ .blog_page = try BlogPage.initPost(allocator, feed, page_name) };
-    defer root.deinit();
-
-    try root.build(.{
-        .min_size = .{ .width = static_width, .height = null },
-        .max_size = .{ .width = static_width, .height = null },
-    }, root.getFocus());
-
-    const content = try generateHtml(allocator, &root);
-    defer allocator.free(content);
-
-    const title = if (std.mem.eql(u8, page_name, "index"))
-        try allocator.dupe(u8, "XITLOG")
-    else
-        try pageTitle(allocator, page_name);
-    defer allocator.free(title);
-
-    const with_title = try replaceOnce(allocator, template, "{{{ XITLOG_TITLE }}}", title);
-    defer allocator.free(with_title);
-    return try replaceOnce(allocator, with_title, "{{{ XITLOG_CONTENT }}}", content);
-}
-
-pub fn generateHtml(allocator: std.mem.Allocator, root: *Widget) ![]const u8 {
-    switch (root.*) {
-        .blog_page => |*page| return try page.toHtml(allocator),
-        else => {},
-    }
-
-    const grid = root.getGrid() orelse return error.MissingGrid;
-    const links = root.getLinks();
-
-    var out: std.ArrayList(u8) = .empty;
-    errdefer out.deinit(allocator);
-
-    var link_index: usize = 0;
-    var in_link = false;
-
-    for (0..grid.size.height) |y| {
-        for (0..grid.size.width) |x| {
-            const rune = grid.cells.items[try grid.cells.at(.{ y, x })].rune orelse " ";
-            if (!in_link and std.mem.eql(u8, rune, "[") and link_index < links.len) {
-                try out.appendSlice(allocator, "<a href='");
-                try appendEscapedAttr(allocator, &out, links[link_index].href);
-                try out.appendSlice(allocator, "'>");
-                in_link = true;
-            } else if (in_link and std.mem.eql(u8, rune, "]")) {
-                try out.appendSlice(allocator, "</a>");
-                link_index += 1;
-                in_link = false;
-            } else {
-                try appendEscapedHtml(allocator, &out, rune);
-            }
-        }
-        try out.append(allocator, '\n');
-    }
-
-    if (in_link) try out.appendSlice(allocator, "</a>");
-    return try out.toOwnedSlice(allocator);
-}
-
 pub const Widget = union(enum) {
     text: wgt.Text(Widget),
     box: wgt.Box(Widget),
@@ -369,8 +224,76 @@ pub const BlogPage = struct {
     }
 
     fn addHtml(self: *BlogPage, html: []const u8) !void {
-        var parser = HtmlTextParser{ .page = self, .html = html, .index = 0 };
-        try parser.parseNodes(false);
+        var parser = XmlParser{ .xml = html };
+        var text: std.ArrayList(u8) = .empty;
+        defer text.deinit(self.allocator);
+
+        var code_depth: usize = 0;
+        var link_depth: usize = 0;
+        var skip_depth: usize = 0;
+        var skip_name: []const u8 = "";
+
+        while (try parser.next()) |token| {
+            if (skip_depth > 0) {
+                switch (token) {
+                    .start_tag => |tag| {
+                        if (!tag.self_closing and std.mem.eql(u8, tag.name, skip_name)) skip_depth += 1;
+                    },
+                    .end_tag => |name| {
+                        if (std.mem.eql(u8, name, skip_name)) skip_depth -= 1;
+                    },
+                    else => {},
+                }
+                continue;
+            }
+
+            switch (token) {
+                .start_tag => |tag| {
+                    if (std.mem.eql(u8, tag.name, "p")) {
+                        try self.flushHtmlText(&text, code_depth > 0);
+                    } else if (std.mem.eql(u8, tag.name, "br")) {
+                        try self.flushHtmlText(&text, code_depth > 0);
+                    } else if (std.mem.eql(u8, tag.name, "a")) {
+                        const href = try dupAttr(self.allocator, tag.raw, "href");
+                        errdefer self.allocator.free(href);
+                        try self.links.append(self.allocator, .{ .href = href });
+                        try text.append(self.allocator, '[');
+                        if (tag.self_closing) {
+                            try text.append(self.allocator, ']');
+                        } else {
+                            link_depth += 1;
+                        }
+                    } else if (std.mem.eql(u8, tag.name, "code")) {
+                        try self.flushHtmlText(&text, code_depth > 0);
+                        if (!tag.self_closing) code_depth += 1;
+                    } else if (try attrEquals(self.allocator, tag.raw, "data-node", "dragon")) {
+                        try self.flushHtmlText(&text, code_depth > 0);
+                        try self.addDragon();
+                        if (!tag.self_closing) {
+                            skip_depth = 1;
+                            skip_name = tag.name;
+                        }
+                    }
+                },
+                .end_tag => |name| {
+                    if (std.mem.eql(u8, name, "a") and link_depth > 0) {
+                        try text.append(self.allocator, ']');
+                        link_depth -= 1;
+                    } else if (std.mem.eql(u8, name, "code") and code_depth > 0) {
+                        code_depth -= 1;
+                        try self.flushHtmlText(&text, true);
+                    } else if (std.mem.eql(u8, name, "p")) {
+                        try self.flushHtmlText(&text, code_depth > 0);
+                        try self.addLine("");
+                    }
+                },
+                .text => |content| try appendDecoded(self.allocator, &text, content),
+                .cdata => |content| try text.appendSlice(self.allocator, content),
+            }
+        }
+
+        if (link_depth > 0) try text.append(self.allocator, ']');
+        try self.flushHtmlText(&text, code_depth > 0);
     }
 
     fn addWrappedText(self: *BlogPage, text: []const u8) !void {
@@ -443,132 +366,329 @@ pub const BlogPage = struct {
 
         return try out.toOwnedSlice(allocator);
     }
-};
 
-const HtmlTextParser = struct {
-    page: *BlogPage,
-    html: []const u8,
-    index: usize,
-
-    fn parseNodes(self: *HtmlTextParser, in_code: bool) !void {
-        var text: std.ArrayList(u8) = .empty;
-        defer text.deinit(self.page.allocator);
-
-        while (self.index < self.html.len) {
-            if (self.html[self.index] != '<') {
-                const end = std.mem.indexOfScalarPos(u8, self.html, self.index, '<') orelse self.html.len;
-                try appendDecoded(self.page.allocator, &text, self.html[self.index..end]);
-                self.index = end;
-                continue;
-            }
-
-            if (std.mem.startsWith(u8, self.html[self.index..], "</")) {
-                break;
-            }
-
-            const tag_end = std.mem.indexOfScalarPos(u8, self.html, self.index, '>') orelse return error.InvalidHtml;
-            const tag = self.html[self.index + 1 .. tag_end];
-            self.index = tag_end + 1;
-
-            if (startsWithTag(tag, "p")) {
-                try self.flushText(&text, in_code);
-                try self.parseNodes(false);
-                try self.consumeClose("p");
-                try self.flushText(&text, false);
-                try self.page.addLine("");
-            } else if (startsWithTag(tag, "br")) {
-                try self.flushText(&text, in_code);
-            } else if (startsWithTag(tag, "a")) {
-                const href = try dupAttr(self.page.allocator, tag, "href");
-                errdefer self.page.allocator.free(href);
-                try self.page.links.append(self.page.allocator, .{ .href = href });
-                try text.append(self.page.allocator, '[');
-                const link_end = std.mem.indexOf(u8, self.html[self.index..], "</a>") orelse return error.InvalidHtml;
-                try appendHtmlText(self.page.allocator, &text, self.html[self.index .. self.index + link_end]);
-                self.index += link_end;
-                try self.consumeClose("a");
-                try text.append(self.page.allocator, ']');
-            } else if (startsWithTag(tag, "code")) {
-                try self.flushText(&text, in_code);
-                try self.parseNodes(true);
-                try self.consumeClose("code");
-                try self.flushText(&text, true);
-            } else if (std.mem.indexOf(u8, tag, "data-node=\"dragon\"") != null) {
-                try self.flushText(&text, in_code);
-                try self.skipElement("div");
-                try self.page.addDragon();
-            } else {
-                try self.parseNodes(in_code);
-                const name = tagName(tag);
-                if (name.len > 0) try self.consumeClose(name);
-            }
-        }
-
-        try self.flushText(&text, in_code);
-    }
-
-    fn flushText(self: *HtmlTextParser, text: *std.ArrayList(u8), in_code: bool) !void {
+    fn flushHtmlText(self: *BlogPage, text: *std.ArrayList(u8), in_code: bool) !void {
         const trimmed = if (in_code) text.items else std.mem.trim(u8, text.items, " \t\r\n");
         if (trimmed.len > 0) {
-            if (in_code) try self.page.addCode(trimmed) else try self.page.addWrappedText(trimmed);
+            if (in_code) try self.addCode(trimmed) else try self.addWrappedText(trimmed);
         }
         text.clearRetainingCapacity();
     }
+};
 
-    fn consumeClose(self: *HtmlTextParser, name: []const u8) !void {
-        const close_start = self.index;
-        if (!std.mem.startsWith(u8, self.html[close_start..], "</")) return;
-        const tag_end = std.mem.indexOfScalarPos(u8, self.html, close_start, '>') orelse return error.InvalidHtml;
-        const close_tag = std.mem.trim(u8, self.html[close_start + 2 .. tag_end], " \t\r\n");
-        if (std.mem.eql(u8, close_tag, name)) {
-            self.index = tag_end + 1;
-        }
+pub fn generatePageHtml(
+    allocator: std.mem.Allocator,
+    template: []const u8,
+    feed: Feed,
+    page_name: []const u8,
+) ![]const u8 {
+    var root = if (std.mem.eql(u8, page_name, "index"))
+        Widget{ .blog_page = try BlogPage.initIndex(allocator, feed) }
+    else
+        Widget{ .blog_page = try BlogPage.initPost(allocator, feed, page_name) };
+    defer root.deinit();
+
+    try root.build(.{
+        .min_size = .{ .width = static_width, .height = null },
+        .max_size = .{ .width = static_width, .height = null },
+    }, root.getFocus());
+
+    const content = try generateHtml(allocator, &root);
+    defer allocator.free(content);
+
+    const title = if (std.mem.eql(u8, page_name, "index"))
+        try allocator.dupe(u8, "XITLOG")
+    else
+        try pageTitle(allocator, page_name);
+    defer allocator.free(title);
+
+    const with_title = try replaceOnce(allocator, template, "{{{ XITLOG_TITLE }}}", title);
+    defer allocator.free(with_title);
+    return try replaceOnce(allocator, with_title, "{{{ XITLOG_CONTENT }}}", content);
+}
+
+pub fn generateHtml(allocator: std.mem.Allocator, root: *Widget) ![]const u8 {
+    switch (root.*) {
+        .blog_page => |*page| return try page.toHtml(allocator),
+        else => {},
     }
 
-    fn skipElement(self: *HtmlTextParser, name: []const u8) !void {
-        const close = try std.fmt.allocPrint(self.page.allocator, "</{s}>", .{name});
-        defer self.page.allocator.free(close);
-        const rel = std.mem.indexOf(u8, self.html[self.index..], close) orelse return error.InvalidHtml;
-        self.index += rel + close.len;
+    const grid = root.getGrid() orelse return error.MissingGrid;
+    const links = root.getLinks();
+
+    var out: std.ArrayList(u8) = .empty;
+    errdefer out.deinit(allocator);
+
+    var link_index: usize = 0;
+    var in_link = false;
+
+    for (0..grid.size.height) |y| {
+        for (0..grid.size.width) |x| {
+            const rune = grid.cells.items[try grid.cells.at(.{ y, x })].rune orelse " ";
+            if (!in_link and std.mem.eql(u8, rune, "[") and link_index < links.len) {
+                try out.appendSlice(allocator, "<a href='");
+                try appendEscapedAttr(allocator, &out, links[link_index].href);
+                try out.appendSlice(allocator, "'>");
+                in_link = true;
+            } else if (in_link and std.mem.eql(u8, rune, "]")) {
+                try out.appendSlice(allocator, "</a>");
+                link_index += 1;
+                in_link = false;
+            } else {
+                try appendEscapedHtml(allocator, &out, rune);
+            }
+        }
+        try out.append(allocator, '\n');
+    }
+
+    if (in_link) try out.appendSlice(allocator, "</a>");
+    return try out.toOwnedSlice(allocator);
+}
+
+pub const Link = struct {
+    href: []const u8,
+};
+
+pub const Entry = struct {
+    title: []const u8,
+    slug: []const u8,
+    updated: []const u8,
+    content: []const u8,
+
+    fn deinit(self: Entry, allocator: std.mem.Allocator) void {
+        allocator.free(self.title);
+        allocator.free(self.slug);
+        allocator.free(self.updated);
+        allocator.free(self.content);
     }
 };
 
-fn findBetween(haystack: []const u8, start: []const u8, end: []const u8) ?Match {
-    const start_index = std.mem.indexOf(u8, haystack, start) orelse return null;
-    const inner_start = start_index + start.len;
-    const end_rel = std.mem.indexOf(u8, haystack[inner_start..], end) orelse return null;
-    const end_index = inner_start + end_rel;
-    return .{
-        .inner = haystack[inner_start..end_index],
-        .after = haystack[end_index + end.len ..],
-    };
-}
+pub const Feed = struct {
+    allocator: std.mem.Allocator,
+    entries: []Entry,
 
-fn dupBetween(allocator: std.mem.Allocator, haystack: []const u8, start: []const u8, end: []const u8) ![]const u8 {
-    const match = findBetween(haystack, start, end) orelse return error.MissingField;
-    return allocator.dupe(u8, std.mem.trim(u8, match.inner, " \t\r\n"));
-}
+    pub fn parse(allocator: std.mem.Allocator, xml: []const u8) !Feed {
+        var entries: std.ArrayList(Entry) = .empty;
+        var title_buf: std.ArrayList(u8) = .empty;
+        var updated_buf: std.ArrayList(u8) = .empty;
+        var content_buf: std.ArrayList(u8) = .empty;
+        var slug: ?[]const u8 = null;
+        errdefer {
+            for (entries.items) |entry| entry.deinit(allocator);
+            entries.deinit(allocator);
+            title_buf.deinit(allocator);
+            updated_buf.deinit(allocator);
+            content_buf.deinit(allocator);
+            if (slug) |value| allocator.free(value);
+        }
 
-fn findTag(haystack: []const u8, name: []const u8) ?[]const u8 {
-    const open = std.fmt.allocPrint(std.heap.page_allocator, "<{s}", .{name}) catch return null;
-    defer std.heap.page_allocator.free(open);
-    const start = std.mem.indexOf(u8, haystack, open) orelse return null;
-    const end = std.mem.indexOfScalarPos(u8, haystack, start, '>') orelse return null;
-    return haystack[start + 1 .. end];
+        var parser = XmlParser{ .xml = xml };
+        var in_entry = false;
+        var field: enum { none, title, updated, content } = .none;
+
+        while (try parser.next()) |token| {
+            switch (token) {
+                .start_tag => |tag| {
+                    if (std.mem.eql(u8, tag.name, "entry")) {
+                        in_entry = true;
+                        field = .none;
+                        title_buf.clearRetainingCapacity();
+                        updated_buf.clearRetainingCapacity();
+                        content_buf.clearRetainingCapacity();
+                        if (slug) |value| allocator.free(value);
+                        slug = null;
+                    } else if (in_entry and std.mem.eql(u8, tag.name, "title")) {
+                        field = .title;
+                    } else if (in_entry and std.mem.eql(u8, tag.name, "updated")) {
+                        field = .updated;
+                    } else if (in_entry and std.mem.eql(u8, tag.name, "content")) {
+                        field = .content;
+                    } else if (in_entry and std.mem.eql(u8, tag.name, "link")) {
+                        if (slug) |value| allocator.free(value);
+                        slug = try dupAttr(allocator, tag.raw, "title");
+                    }
+                },
+                .end_tag => |name| {
+                    if (!in_entry) continue;
+                    if (std.mem.eql(u8, name, "entry")) {
+                        const title = try dupTrimmed(allocator, title_buf.items);
+                        errdefer allocator.free(title);
+                        const updated = try dupTrimmed(allocator, updated_buf.items);
+                        errdefer allocator.free(updated);
+                        const content = try dupTrimmed(allocator, content_buf.items);
+                        errdefer allocator.free(content);
+                        const entry_slug = slug orelse return error.MissingLink;
+                        slug = null;
+
+                        try entries.append(allocator, .{
+                            .title = title,
+                            .slug = entry_slug,
+                            .updated = updated,
+                            .content = content,
+                        });
+
+                        in_entry = false;
+                        field = .none;
+                    } else if (std.mem.eql(u8, name, "title") and field == .title) {
+                        field = .none;
+                    } else if (std.mem.eql(u8, name, "updated") and field == .updated) {
+                        field = .none;
+                    } else if (std.mem.eql(u8, name, "content") and field == .content) {
+                        field = .none;
+                    }
+                },
+                .text => |text| {
+                    if (!in_entry) continue;
+                    switch (field) {
+                        .title => try appendDecoded(allocator, &title_buf, text),
+                        .updated => try appendDecoded(allocator, &updated_buf, text),
+                        .content => try appendDecoded(allocator, &content_buf, text),
+                        .none => {},
+                    }
+                },
+                .cdata => |text| {
+                    if (in_entry and field == .content) try content_buf.appendSlice(allocator, text);
+                },
+            }
+        }
+
+        const owned_entries = try entries.toOwnedSlice(allocator);
+        title_buf.deinit(allocator);
+        updated_buf.deinit(allocator);
+        content_buf.deinit(allocator);
+
+        return .{
+            .allocator = allocator,
+            .entries = owned_entries,
+        };
+    }
+
+    pub fn deinit(self: *Feed) void {
+        for (self.entries) |entry| entry.deinit(self.allocator);
+        self.allocator.free(self.entries);
+    }
+
+    pub fn findEntry(self: Feed, slug: []const u8) ?Entry {
+        for (self.entries) |entry| {
+            if (std.mem.eql(u8, entry.slug, slug)) return entry;
+        }
+        return null;
+    }
+};
+
+const XmlStartTag = struct {
+    raw: []const u8,
+    name: []const u8,
+    self_closing: bool,
+};
+
+const XmlToken = union(enum) {
+    start_tag: XmlStartTag,
+    end_tag: []const u8,
+    text: []const u8,
+    cdata: []const u8,
+};
+
+const XmlParser = struct {
+    xml: []const u8,
+    index: usize = 0,
+
+    fn next(self: *XmlParser) !?XmlToken {
+        while (self.index < self.xml.len) {
+            if (self.xml[self.index] != '<') {
+                const end = std.mem.indexOfScalarPos(u8, self.xml, self.index, '<') orelse self.xml.len;
+                const text = self.xml[self.index..end];
+                self.index = end;
+                return .{ .text = text };
+            }
+
+            if (std.mem.startsWith(u8, self.xml[self.index..], "<![CDATA[")) {
+                const start = self.index + "<![CDATA[".len;
+                const rel_end = std.mem.indexOf(u8, self.xml[start..], "]]>") orelse return error.InvalidXml;
+                const end = start + rel_end;
+                self.index = end + "]]>".len;
+                return .{ .cdata = self.xml[start..end] };
+            }
+
+            if (std.mem.startsWith(u8, self.xml[self.index..], "<!--")) {
+                const start = self.index + "<!--".len;
+                const rel_end = std.mem.indexOf(u8, self.xml[start..], "-->") orelse return error.InvalidXml;
+                self.index = start + rel_end + "-->".len;
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, self.xml[self.index..], "<?")) {
+                const end = std.mem.indexOf(u8, self.xml[self.index + 2 ..], "?>") orelse return error.InvalidXml;
+                self.index += 2 + end + "?>".len;
+                continue;
+            }
+
+            if (std.mem.startsWith(u8, self.xml[self.index..], "</")) {
+                const end = std.mem.indexOfScalarPos(u8, self.xml, self.index + 2, '>') orelse return error.InvalidXml;
+                const name = std.mem.trim(u8, self.xml[self.index + 2 .. end], " \t\r\n");
+                self.index = end + 1;
+                return .{ .end_tag = name };
+            }
+
+            const end = std.mem.indexOfScalarPos(u8, self.xml, self.index + 1, '>') orelse return error.InvalidXml;
+            var raw = std.mem.trim(u8, self.xml[self.index + 1 .. end], " \t\r\n");
+            const self_closing = raw.len > 0 and raw[raw.len - 1] == '/';
+            if (self_closing) raw = std.mem.trim(u8, raw[0 .. raw.len - 1], " \t\r\n");
+            const name = tagName(raw);
+            if (name.len == 0) return error.InvalidXml;
+            self.index = end + 1;
+            return .{ .start_tag = .{
+                .raw = raw,
+                .name = name,
+                .self_closing = self_closing,
+            } };
+        }
+
+        return null;
+    }
+};
+
+fn dupTrimmed(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
+    return allocator.dupe(u8, std.mem.trim(u8, input, " \t\r\n"));
 }
 
 fn dupAttr(allocator: std.mem.Allocator, tag: []const u8, name: []const u8) ![]const u8 {
-    const key = try std.fmt.allocPrint(allocator, "{s}=\"", .{name});
-    defer allocator.free(key);
-    const start_rel = std.mem.indexOf(u8, tag, key) orelse return error.MissingAttribute;
-    const value_start = start_rel + key.len;
-    const value_end_rel = std.mem.indexOfScalarPos(u8, tag, value_start, '"') orelse return error.MissingAttribute;
-    return try decodeEntitiesAlloc(allocator, tag[value_start..value_end_rel]);
+    var i = tagName(tag).len;
+    while (i < tag.len) {
+        while (i < tag.len and std.ascii.isWhitespace(tag[i])) : (i += 1) {}
+        if (i >= tag.len) break;
+
+        const attr_name_start = i;
+        while (i < tag.len and !std.ascii.isWhitespace(tag[i]) and tag[i] != '=') : (i += 1) {}
+        const attr_name = tag[attr_name_start..i];
+
+        while (i < tag.len and std.ascii.isWhitespace(tag[i])) : (i += 1) {}
+        if (i >= tag.len or tag[i] != '=') return error.InvalidXml;
+        i += 1;
+        while (i < tag.len and std.ascii.isWhitespace(tag[i])) : (i += 1) {}
+        if (i >= tag.len or (tag[i] != '"' and tag[i] != '\'')) return error.InvalidXml;
+
+        const quote = tag[i];
+        i += 1;
+        const value_start = i;
+        while (i < tag.len and tag[i] != quote) : (i += 1) {}
+        if (i >= tag.len) return error.InvalidXml;
+        const value = tag[value_start..i];
+        i += 1;
+
+        if (std.mem.eql(u8, attr_name, name)) return try decodeEntitiesAlloc(allocator, value);
+    }
+
+    return error.MissingAttribute;
 }
 
-fn startsWithTag(tag: []const u8, name: []const u8) bool {
-    if (!std.mem.startsWith(u8, tag, name)) return false;
-    return tag.len == name.len or std.ascii.isWhitespace(tag[name.len]) or tag[name.len] == '/' or tag[name.len] == '>';
+fn attrEquals(allocator: std.mem.Allocator, tag: []const u8, name: []const u8, expected: []const u8) !bool {
+    const value = dupAttr(allocator, tag, name) catch |err| switch (err) {
+        error.MissingAttribute => return false,
+        else => return err,
+    };
+    defer allocator.free(value);
+    return std.mem.eql(u8, value, expected);
 }
 
 fn tagName(tag: []const u8) []const u8 {
@@ -637,20 +757,6 @@ fn decodeEntitiesAlloc(allocator: std.mem.Allocator, input: []const u8) ![]const
     errdefer out.deinit(allocator);
     try appendDecoded(allocator, &out, input);
     return try out.toOwnedSlice(allocator);
-}
-
-fn appendHtmlText(allocator: std.mem.Allocator, out: *std.ArrayList(u8), input: []const u8) !void {
-    var i: usize = 0;
-    while (i < input.len) {
-        if (input[i] == '<') {
-            const end = std.mem.indexOfScalarPos(u8, input, i, '>') orelse return error.InvalidHtml;
-            i = end + 1;
-        } else {
-            const end = std.mem.indexOfScalarPos(u8, input, i, '<') orelse input.len;
-            try appendDecoded(allocator, out, input[i..end]);
-            i = end;
-        }
-    }
 }
 
 fn appendLinkedLineHtml(
