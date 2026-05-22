@@ -6,7 +6,7 @@ const term = xitui.terminal;
 const layout = xitui.layout;
 const Grid = xitui.grid.Grid;
 
-const feed_xml = @embedFile("assets/feed.xml");
+const feed_xml = @embedFile("embed/feed.xml");
 
 pub fn main() !void {
     // init allocator

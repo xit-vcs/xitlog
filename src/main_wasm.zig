@@ -4,7 +4,7 @@ const xitui = xitlog.xitui;
 const inp = xitui.input;
 
 const allocator = std.heap.wasm_allocator;
-const feed_xml = @embedFile("assets/feed.xml");
+const feed_xml = @embedFile("embed/feed.xml");
 
 var root: ?xitlog.Widget = null;
 

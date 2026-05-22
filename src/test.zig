@@ -1,7 +1,7 @@
 const std = @import("std");
 const xitlog = @import("xitlog");
 
-const feed_xml = @embedFile("assets/feed.xml");
+const feed_xml = @embedFile("embed/feed.xml");
 
 test "generate html" {
     const allocator = std.testing.allocator;

@@ -2,8 +2,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const xitlog = @import("xitlog");
 
-const feed_xml = @embedFile("assets/feed.xml");
-const template = @embedFile("assets/index_static.html");
+const feed_xml = @embedFile("embed/feed.xml");
+const template = @embedFile("embed/index.html");
 
 pub fn main() !void {
     var debug_allocator: std.heap.DebugAllocator(.{}) = .init;

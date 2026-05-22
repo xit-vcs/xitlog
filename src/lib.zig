@@ -9,7 +9,7 @@ const Focus = xitui.focus.Focus;
 
 const max_line_len = 60;
 const static_width = 80;
-const dragon_ansi = @embedFile("assets/dragon.ansiwave");
+const dragon_ansi = @embedFile("embed/dragon.ansiwave");
 const header =
     \\██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗ 
     \\╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝ 
