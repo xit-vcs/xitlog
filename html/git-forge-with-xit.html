@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>XITLOG - git forge with xit</title>
+<style>
+html {
+  background-color: rgba(0, 50, 70, 1.0);
+  color: rgba(200, 200, 200, 1.0);
+  padding: 10px;
+}
+
+@font-face {
+  font-family: '3270';
+  src: url('term.ttf') format('truetype');
+}
+
+#grid {
+  font-family: '3270', monospace;
+  white-space: pre;
+  font-size: 22px;
+  line-height: 22px;
+}
+
+#grid a {
+  color: white;
+}
+</style>
+</head>
+<body>
+<div id="grid"><a href='index.html'>&lt;- HOME</a> - a blog about <a href='https://github.com/xit-vcs/xit'>xit</a>                                             <a href='feed.xml'>RSS</a>
+
+██╗  ██╗██╗████████╗██╗      ██████╗  ██████╗ 
+╚██╗██╔╝██║╚══██╔══╝██║     ██╔═══██╗██╔════╝ 
+ ╚███╔╝ ██║   ██║   ██║     ██║   ██║██║  ███╗
+ ██╔██╗ ██║   ██║   ██║     ██║   ██║██║   ██║
+██╔╝ ██╗██║   ██║   ███████╗╚██████╔╝╚██████╔╝
+╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝ ╚═════╝  ╚═════╝ 
+
+BUILDING A NEW GIT FORGE WITH XIT - May 24, 2026
+
+This month I started working on <a href='https://github.com/xit-vcs/haxy'>Haxy</a>, a new git forge
+that uses xit for all of its server-side git functionality.
+As I said in the <a href='https://www.youtube.com/watch?v=m7BOY1OCH_Q'>first</a> devlog, using xit gives advantages
+because it can perform all the git operations in-process
+and I can very easily customize receive-pack and
+upload-pack. Haxy will be a single executable that you can
+easily deploy on your own server.
+
+I'm basing Haxy on two big ideas: (1) issues and other
+project metadata should be stored directly in your repo,
+and (2) the server should provide a TUI over SSH (in
+addition to a web UI).
+
+The first big idea has been tried by other projects, but
+remains pretty niche. The point of storing project metadata
+in the repo is to allow viewing/editing it completely
+offline, and secondarily to easily replicate it between git
+forges. We already can do this with our code, so why can't
+we do it with the rest of our project?
+
+One reason this idea hasn't caught on is because it's
+harder to pull off than you may think. If you naively store
+this data as files that you directly edit, you now have to
+deal with conflits. Git conflicts are inevitable with code,
+but nobody wants to deal with them in their issue tracker
+too. Other <a href='https://github.com/git-bug/git-bug'>projects</a> have come up with more sophisticated
+ways to implement this.
+
+I think the main reason the idea hasn't caught on, though,
+is that it needs to be integrated with a git forge. It's
+great to be able to view and edit this data locally, but I
+still want the experience of a normal git forge as well: a
+hosted web UI so I can link to the data, view it on a
+phone, and so on.
+
+Haxy implements this as event sourcing. When you edit the
+project metadata, it is stored as an event in a special
+branch. When these events get to the server, it parses them
+and updates its own database (materialized views)
+accordingly. This becomes much easier because Haxy has an
+immutable database, <a href='https://github.com/xit-vcs/xitdb'>xitdb</a>, so events can be merged and
+reverted just like git does with files.
+
+The second big idea is that Haxy will be accessible from
+the terminal as an SSH app. Imagine viewing and editing
+your projects by simply SSH'ing into a TUI. There will
+still be a web UI as well, of course, and it will render
+the same TUI in your browser. Haxy uses <a href='https://github.com/xit-vcs/xitui'>xitui</a> for its
+interface. This blog uses it as well, so you are already
+looking at an example of a TUI rendered on the web!
+
+<a href='https://www.youtube.com/watch?v=08AnxqnhTcs'>HOP ON THE TUI TRAIN!</a>
+
+It's increasingly looking like Haxy is the most likely way
+for xit to be useful. Haxy can benefit from many of xit's
+features, like patch-based merging and universal undo,
+without requiring you to change what tool you use locally.
+You can keep using git, and still get these features
+server-side.
+
+I don't know where this project will go, but I'll do my
+best to see it through. Whether or not it leads to an
+actual production deployment depends on how development
+goes, and how much interest there is. This may be a long
+shot, but as Gimli said: certainty of death, small chance
+of success, what are we waiting for?
+
+</div>
+</body>
+</html>

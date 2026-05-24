@@ -3,11 +3,30 @@
 
  <title>xitlog</title>
  <link href="https://xit-vcs.github.io/xitlog"/>
- <updated>2026-04-14T00:00:00Z</updated>
+ <updated>2026-05-24T00:00:00Z</updated>
  <author>
    <name>radar roark</name>
  </author>
  <id>https://xit-vcs.github.io/xitlog</id>
+
+ <entry>
+  <title>building a new git forge with xit</title>
+  <link href="https://xit-vcs.github.io/xitlog/git-forge-with-xit.html" title="git-forge-with-xit"/>
+  <id>urn:uuid:26ead891-fe8b-4b53-ac57-a7f348c049bb</id>
+  <updated>2026-05-24T00:00:00Z</updated>
+  <content type="html" xml:lang="en"><![CDATA[
+  <p>This month I started working on <a href="https://github.com/xit-vcs/haxy">Haxy</a>, a new git forge that uses xit for all of its server-side git functionality. As I said in the <a href="https://www.youtube.com/watch?v=m7BOY1OCH_Q">first</a> devlog, using xit gives advantages because it can perform all the git operations in-process and I can very easily customize receive-pack and upload-pack. Haxy will be a single executable that you can easily deploy on your own server.</p>
+  <p>I'm basing Haxy on two big ideas: (1) issues and other project metadata should be stored directly in your repo, and (2) the server should provide a TUI over SSH (in addition to a web UI).</p>
+  <p>The first big idea has been tried by other projects, but remains pretty niche. The point of storing project metadata in the repo is to allow viewing/editing it completely offline, and secondarily to easily replicate it between git forges. We already can do this with our code, so why can't we do it with the rest of our project?</p>
+  <p>One reason this idea hasn't caught on is because it's harder to pull off than you may think. If you naively store this data as files that you directly edit, you now have to deal with conflits. Git conflicts are inevitable with code, but nobody wants to deal with them in their issue tracker too. Other <a href="https://github.com/git-bug/git-bug">projects</a> have come up with more sophisticated ways to implement this.</p>
+  <p>I think the main reason the idea hasn't caught on, though, is that it needs to be integrated with a git forge. It's great to be able to view and edit this data locally, but I still want the experience of a normal git forge as well: a hosted web UI so I can link to the data, view it on a phone, and so on.</p>
+  <p>Haxy implements this as event sourcing. When you edit the project metadata, it is stored as an event in a special branch. When these events get to the server, it parses them and updates its own database (materialized views) accordingly. This becomes much easier because Haxy has an immutable database, <a href="https://github.com/xit-vcs/xitdb">xitdb</a>, so events can be merged and reverted just like git does with files.</p>
+  <p>The second big idea is that Haxy will be accessible from the terminal as an SSH app. Imagine viewing and editing your projects by simply SSH'ing into a TUI. There will still be a web UI as well, of course, and it will render the same TUI in your browser. Haxy uses <a href="https://github.com/xit-vcs/xitui">xitui</a> for its interface. This blog uses it as well, so you are already looking at an example of a TUI rendered on the web!</p>
+  <p><a href="https://www.youtube.com/watch?v=08AnxqnhTcs">HOP ON THE TUI TRAIN!</a></p>
+  <p>It's increasingly looking like Haxy is the most likely way for xit to be useful. Haxy can benefit from many of xit's features, like patch-based merging and universal undo, without requiring you to change what tool you use locally. You can keep using git, and still get these features server-side.</p>
+  <p>I don't know where this project will go, but I'll do my best to see it through. Whether or not it leads to an actual production deployment depends on how development goes, and how much interest there is. This may be a long shot, but as Gimli said: certainty of death, small chance of success, what are we waiting for?</p>
+  ]]></content>
+ </entry>
 
  <entry>
   <title>devlog - supporting zig 0.16 and server-side networking</title>
