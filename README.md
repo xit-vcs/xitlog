@@ -1,4 +1,4 @@
-This is a little static site generator for [xitlog](https://xit-vcs.github.io/xitlog/), a blog about [xit](https://github.com/xit-vcs/xit). It reads the blog posts out of `html/feed.xml` and renders them as html.
+This is a little static site generator for [xitlog](https://xit-vcs.github.io/xitlog/) written in Zig (requires version 0.16.0), a blog about [xit](https://github.com/xit-vcs/xit). It reads the blog posts out of `html/feed.xml` and renders them as html.
 
 To re-generate the html files and view them in your browser:
 
@@ -16,10 +16,8 @@ cd wasm
 python -m http.server
 ```
 
-Lastly, you can also render the blog in your terminal:
+Lastly, you can also render the blog in your terminal for no reason in particular:
 
 ```
 zig build run
 ```
-
-*Your scientists were so preoccupied with whether or not they could, they didn’t stop to think if they should. -- Dr. Ian Malcolm*
