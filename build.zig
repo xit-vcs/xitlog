@@ -22,7 +22,6 @@ pub fn build(b: *std.Build) void {
         });
         exe.root_module.addImport("xitlog", xitlog);
 
-        exe.global_base = 6560;
         exe.entry = .disabled;
         exe.rdynamic = true;
         exe.import_memory = false;
@@ -62,9 +61,7 @@ pub fn build(b: *std.Build) void {
 
         const run_cmd = b.addRunArtifact(exe);
         run_cmd.step.dependOn(b.getInstallStep());
-        if (b.args) |args| {
-            run_cmd.addArgs(args);
-        }
+        run_cmd.addPassthruArgs();
         const run_step = b.step("run", "Run the terminal version");
         run_step.dependOn(&run_cmd.step);
     }

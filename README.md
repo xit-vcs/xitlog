@@ -1,4 +1,4 @@
-This is a little static site generator for [xitlog](https://xit-vcs.github.io/xitlog/) written in Zig (requires version 0.16.0), a blog about [xit](https://github.com/xit-vcs/xit). It reads the blog posts out of `html/feed.xml` and renders them as html.
+This is a little static site generator for [xitlog](https://xit-vcs.github.io/xitlog/) written in Zig (requires version 0.17.0), a blog about [xit](https://github.com/xit-vcs/xit). It reads the blog posts out of `html/feed.xml` and renders them as html.
 
 To re-generate the html files and view them in your browser:
 

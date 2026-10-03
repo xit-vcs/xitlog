@@ -16,14 +16,14 @@ fn renderPage(page_name: []const u8, push_history: bool) !void {
         xitlog.Widget{ .blog_page = try xitlog.BlogPage.initIndex(allocator, feed) }
     else
         xitlog.Widget{ .blog_page = try xitlog.BlogPage.initPost(allocator, feed, page_name) };
-    errdefer next_root.deinit();
+    errdefer next_root.deinit(allocator);
 
-    try next_root.build(.{
+    try next_root.build(allocator, .{
         .min_size = .{ .width = null, .height = null },
         .max_size = .{ .width = null, .height = null },
     }, next_root.getFocus());
 
-    if (root) |*old_root| old_root.deinit();
+    if (root) |*old_root| old_root.deinit(allocator);
     root = next_root;
 
     try updateHtml();
@@ -32,7 +32,7 @@ fn renderPage(page_name: []const u8, push_history: bool) !void {
         const path = if (std.mem.eql(u8, page_name, "index"))
             try allocator.dupe(u8, "index.html")
         else
-            try std.fmt.allocPrint(allocator, "{s}.html", .{page_name});
+            try allocator.print("{s}.html", .{page_name});
         defer allocator.free(path);
         pushUrl(path);
     }
@@ -52,7 +52,7 @@ fn start() !void {
 fn tick() !void {
     const root_ptr = if (root) |*root_value| root_value else return error.NotStarted;
 
-    try root_ptr.build(.{
+    try root_ptr.build(allocator, .{
         .min_size = .{ .width = null, .height = null },
         .max_size = .{ .width = null, .height = null },
     }, root_ptr.getFocus());
@@ -67,14 +67,14 @@ fn onKeyDown(key_code: u32) !void {
         40 => .arrow_down,
         else => return,
     };
-    try root_ptr.input(key, root_ptr.getFocus());
+    try root_ptr.input(allocator, key, root_ptr.getFocus());
 }
 
 fn normalizePageName(raw: []const u8) []const u8 {
     var page_name = raw;
-    if (std.mem.indexOfScalar(u8, page_name, '#')) |hash_index| page_name = page_name[0..hash_index];
-    if (std.mem.indexOfScalar(u8, page_name, '?')) |query_index| page_name = page_name[0..query_index];
-    if (std.mem.lastIndexOfScalar(u8, page_name, '/')) |slash_index| page_name = page_name[slash_index + 1 ..];
+    if (std.mem.findScalar(u8, page_name, '#')) |hash_index| page_name = page_name[0..hash_index];
+    if (std.mem.findScalar(u8, page_name, '?')) |query_index| page_name = page_name[0..query_index];
+    if (std.mem.findScalarLast(u8, page_name, '/')) |slash_index| page_name = page_name[slash_index + 1 ..];
     if (std.mem.endsWith(u8, page_name, ".html")) page_name = page_name[0 .. page_name.len - ".html".len];
     if (page_name.len == 0) return "index";
     return page_name;
@@ -109,7 +109,7 @@ export fn _free(ptr: u32, len: u32) void {
 export fn _start() void {
     start() catch |err| {
         var buf: [256]u8 = undefined;
-        const str = std.fmt.bufPrint(&buf, "start: {}", .{err}) catch unreachable;
+        const str = std.mem.print(&buf, "start: {}", .{err}) catch unreachable;
         consoleLog(str);
     };
 }
@@ -117,7 +117,7 @@ export fn _start() void {
 export fn _tick() bool {
     tick() catch |err| {
         var buf: [256]u8 = undefined;
-        const str = std.fmt.bufPrint(&buf, "tick: {}", .{err}) catch unreachable;
+        const str = std.mem.print(&buf, "tick: {}", .{err}) catch unreachable;
         consoleLog(str);
         return false;
     };
@@ -133,7 +133,7 @@ export fn _navigate(ptr: u32, len: u32, push_history: bool) bool {
     const page_name = normalizePageName(bytes[0..len]);
     renderPage(page_name, push_history) catch |err| {
         var buf: [256]u8 = undefined;
-        const str = std.fmt.bufPrint(&buf, "navigate: {}", .{err}) catch unreachable;
+        const str = std.mem.print(&buf, "navigate: {}", .{err}) catch unreachable;
         consoleLog(str);
         return false;
     };

@@ -6,10 +6,10 @@ const feed_xml = @embedFile("embed/feed.xml");
 const template = @embedFile("embed/index.html");
 
 pub fn main() !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    const allocator = if (builtin.mode == .Debug) debug_allocator.allocator() else std.heap.smp_allocator;
-    defer if (builtin.mode == .Debug) {
-        _ = debug_allocator.deinit();
+    var safe_allocator: std.heap.SafeAllocator = .init(std.heap.page_allocator, .{});
+    const allocator = if (builtin.optimize == .debug) safe_allocator.allocator() else std.heap.smp_allocator;
+    defer if (builtin.optimize == .debug) {
+        _ = safe_allocator.deinit();
     };
 
     var threaded: std.Io.Threaded = .init_single_threaded;
@@ -29,7 +29,7 @@ pub fn main() !void {
     for (feed.entries) |entry| {
         const html = try xitlog.generatePageHtml(allocator, template, feed, entry.slug);
         defer allocator.free(html);
-        const path = try std.fmt.allocPrint(allocator, "html/{s}.html", .{entry.slug});
+        const path = try allocator.print("html/{s}.html", .{entry.slug});
         defer allocator.free(path);
         try cwd.writeFile(io, .{ .sub_path = path, .data = html });
     }

@@ -10,15 +10,15 @@ test "generate html" {
     defer feed.deinit();
 
     var root = xitlog.Widget{ .blog_page = try xitlog.BlogPage.initIndex(allocator, feed) };
-    defer root.deinit();
+    defer root.deinit(allocator);
 
     // set initial focus for root widget
-    try root.build(.{
+    try root.build(allocator, .{
         .min_size = .{ .width = null, .height = null },
         .max_size = .{ .width = null, .height = null },
     }, root.getFocus());
     if (root.getFocus().child_id) |child_id| {
-        try root.getFocus().setFocus(child_id);
+        root.getFocus().setFocus(child_id);
     }
 
     const html = try xitlog.generateHtml(allocator, &root);

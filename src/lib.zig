@@ -20,27 +20,27 @@ const header =
 ;
 
 pub const Widget = union(enum) {
-    text: wgt.Text(Widget),
+    text: wgt.Text,
     box: wgt.Box(Widget),
-    text_box: wgt.TextBox(Widget),
+    text_box: wgt.TextBox,
     scroll: wgt.Scroll(Widget),
     blog_page: BlogPage,
 
-    pub fn deinit(self: *Widget) void {
+    pub fn deinit(self: *Widget, allocator: std.mem.Allocator) void {
         switch (self.*) {
-            inline else => |*case| case.deinit(),
+            inline else => |*case| case.deinit(allocator),
         }
     }
 
-    pub fn build(self: *Widget, constraint: layout.Constraint, root_focus: *Focus) anyerror!void {
+    pub fn build(self: *Widget, allocator: std.mem.Allocator, constraint: layout.Constraint, root_focus: *Focus) anyerror!void {
         switch (self.*) {
-            inline else => |*case| try case.build(constraint, root_focus),
+            inline else => |*case| try case.build(allocator, constraint, root_focus),
         }
     }
 
-    pub fn input(self: *Widget, key: inp.Key, root_focus: *Focus) anyerror!void {
+    pub fn input(self: *Widget, allocator: std.mem.Allocator, key: inp.Key, root_focus: *Focus) anyerror!void {
         switch (self.*) {
-            inline else => |*case| try case.input(key, root_focus),
+            inline else => |*case| try case.input(allocator, key, root_focus),
         }
     }
 
@@ -77,24 +77,24 @@ pub const BlogPage = struct {
     };
 
     allocator: std.mem.Allocator,
-    focus: Focus,
+    focus: *Focus,
     grid: ?Grid,
     lines: std.ArrayList(Line),
     links: std.ArrayList(Link),
 
     pub fn initIndex(allocator: std.mem.Allocator, feed: Feed) !BlogPage {
-        var page = BlogPage.empty(allocator);
-        errdefer page.deinit();
+        var page = try BlogPage.empty(allocator);
+        errdefer page.deinit(allocator);
 
         try page.addHeader(true);
         for (feed.entries) |entry| {
             const date = try formatDate(allocator, entry.updated);
             defer allocator.free(date);
-            const href = try std.fmt.allocPrint(allocator, "{s}.html", .{entry.slug});
+            const href = try allocator.print("{s}.html", .{entry.slug});
             errdefer allocator.free(href);
             try page.links.append(allocator, .{ .href = href });
 
-            const line = try std.fmt.allocPrint(allocator, "[{s}] - {s}", .{ entry.title, date });
+            const line = try allocator.print("[{s}] - {s}", .{ entry.title, date });
             defer allocator.free(line);
             try page.addWrappedText(line);
             try page.addLine("");
@@ -106,8 +106,8 @@ pub const BlogPage = struct {
     pub fn initPost(allocator: std.mem.Allocator, feed: Feed, slug: []const u8) !BlogPage {
         const entry = feed.findEntry(slug) orelse return error.PageNotFound;
 
-        var page = BlogPage.empty(allocator);
-        errdefer page.deinit();
+        var page = try BlogPage.empty(allocator);
+        errdefer page.deinit(allocator);
 
         try page.addHeader(false);
 
@@ -115,7 +115,7 @@ pub const BlogPage = struct {
         defer allocator.free(date);
         const upper = try upperAsciiAlloc(allocator, entry.title);
         defer allocator.free(upper);
-        const title_line = try std.fmt.allocPrint(allocator, "{s} - {s}", .{ upper, date });
+        const title_line = try allocator.print("{s} - {s}", .{ upper, date });
         defer allocator.free(title_line);
         try page.addWrappedText(title_line);
         try page.addLine("");
@@ -124,18 +124,19 @@ pub const BlogPage = struct {
         return page;
     }
 
-    fn empty(allocator: std.mem.Allocator) BlogPage {
+    fn empty(allocator: std.mem.Allocator) !BlogPage {
         return .{
             .allocator = allocator,
-            .focus = Focus.init(allocator, .container),
+            .focus = try Focus.create(allocator, .container),
             .grid = null,
             .lines = .empty,
             .links = .empty,
         };
     }
 
-    pub fn deinit(self: *BlogPage) void {
-        self.focus.deinit();
+    pub fn deinit(self: *BlogPage, allocator: std.mem.Allocator) void {
+        _ = allocator;
+        self.focus.destroy(self.allocator);
         self.clearGrid();
         for (self.lines.items) |line| self.allocator.free(line.content);
         self.lines.deinit(self.allocator);
@@ -143,12 +144,12 @@ pub const BlogPage = struct {
         self.links.deinit(self.allocator);
     }
 
-    pub fn build(self: *BlogPage, constraint: layout.Constraint, root_focus: *Focus) !void {
+    pub fn build(self: *BlogPage, allocator: std.mem.Allocator, constraint: layout.Constraint, root_focus: *Focus) !void {
         _ = root_focus;
         self.clearGrid();
 
         const width = constraint.max_size.width orelse static_width;
-        var grid = try Grid.init(self.allocator, .{
+        var grid = try Grid.init(allocator, .{
             .width = width,
             .height = @max(1, self.lines.items.len),
         });
@@ -159,9 +160,9 @@ pub const BlogPage = struct {
 
             var utf8 = (try std.unicode.Utf8View.init(line.content)).iterator();
             var x: usize = 0;
-            while (utf8.nextCodepointSlice()) |char| {
+            while (utf8.nextCodepoint()) |char| {
                 if (x >= width) break;
-                grid.cells.items[try grid.cells.at(.{ y, x })].rune = char;
+                (try grid.cell(x, y)).rune = char;
                 x += 1;
             }
         }
@@ -169,8 +170,9 @@ pub const BlogPage = struct {
         self.grid = grid;
     }
 
-    pub fn input(self: *BlogPage, key: inp.Key, root_focus: *Focus) !void {
+    pub fn input(self: *BlogPage, allocator: std.mem.Allocator, key: inp.Key, root_focus: *Focus) !void {
         _ = self;
+        _ = allocator;
         _ = key;
         _ = root_focus;
     }
@@ -187,7 +189,7 @@ pub const BlogPage = struct {
     }
 
     pub fn getFocus(self: *BlogPage) *Focus {
-        return &self.focus;
+        return self.focus;
     }
 
     fn addHeader(self: *BlogPage, is_index: bool) !void {
@@ -386,9 +388,9 @@ pub fn generatePageHtml(
         Widget{ .blog_page = try BlogPage.initIndex(allocator, feed) }
     else
         Widget{ .blog_page = try BlogPage.initPost(allocator, feed, page_name) };
-    defer root.deinit();
+    defer root.deinit(allocator);
 
-    try root.build(.{
+    try root.build(allocator, .{
         .min_size = .{ .width = static_width, .height = null },
         .max_size = .{ .width = static_width, .height = null },
     }, root.getFocus());
@@ -424,7 +426,11 @@ pub fn generateHtml(allocator: std.mem.Allocator, root: *Widget) ![]const u8 {
 
     for (0..grid.size.height) |y| {
         for (0..grid.size.width) |x| {
-            const rune = grid.cells.items[try grid.cells.at(.{ y, x })].rune orelse " ";
+            var rune_buf: [4]u8 = undefined;
+            const rune = if ((try grid.cell(x, y)).rune) |cp|
+                rune_buf[0..try std.unicode.utf8Encode(cp, &rune_buf)]
+            else
+                " ";
             if (!in_link and std.mem.eql(u8, rune, "[") and link_index < links.len) {
                 try out.appendSlice(allocator, "<a href='");
                 try appendEscapedAttr(allocator, &out, links[link_index].href);
@@ -596,7 +602,7 @@ const XmlParser = struct {
     fn next(self: *XmlParser) !?XmlToken {
         while (self.index < self.xml.len) {
             if (self.xml[self.index] != '<') {
-                const end = std.mem.indexOfScalarPos(u8, self.xml, self.index, '<') orelse self.xml.len;
+                const end = std.mem.findScalarPos(u8, self.xml, self.index, '<') orelse self.xml.len;
                 const text = self.xml[self.index..end];
                 self.index = end;
                 return .{ .text = text };
@@ -604,7 +610,7 @@ const XmlParser = struct {
 
             if (std.mem.startsWith(u8, self.xml[self.index..], "<![CDATA[")) {
                 const start = self.index + "<![CDATA[".len;
-                const rel_end = std.mem.indexOf(u8, self.xml[start..], "]]>") orelse return error.InvalidXml;
+                const rel_end = std.mem.find(u8, self.xml[start..], "]]>") orelse return error.InvalidXml;
                 const end = start + rel_end;
                 self.index = end + "]]>".len;
                 return .{ .cdata = self.xml[start..end] };
@@ -612,25 +618,25 @@ const XmlParser = struct {
 
             if (std.mem.startsWith(u8, self.xml[self.index..], "<!--")) {
                 const start = self.index + "<!--".len;
-                const rel_end = std.mem.indexOf(u8, self.xml[start..], "-->") orelse return error.InvalidXml;
+                const rel_end = std.mem.find(u8, self.xml[start..], "-->") orelse return error.InvalidXml;
                 self.index = start + rel_end + "-->".len;
                 continue;
             }
 
             if (std.mem.startsWith(u8, self.xml[self.index..], "<?")) {
-                const end = std.mem.indexOf(u8, self.xml[self.index + 2 ..], "?>") orelse return error.InvalidXml;
+                const end = std.mem.find(u8, self.xml[self.index + 2 ..], "?>") orelse return error.InvalidXml;
                 self.index += 2 + end + "?>".len;
                 continue;
             }
 
             if (std.mem.startsWith(u8, self.xml[self.index..], "</")) {
-                const end = std.mem.indexOfScalarPos(u8, self.xml, self.index + 2, '>') orelse return error.InvalidXml;
+                const end = std.mem.findScalarPos(u8, self.xml, self.index + 2, '>') orelse return error.InvalidXml;
                 const name = std.mem.trim(u8, self.xml[self.index + 2 .. end], " \t\r\n");
                 self.index = end + 1;
                 return .{ .end_tag = name };
             }
 
-            const end = std.mem.indexOfScalarPos(u8, self.xml, self.index + 1, '>') orelse return error.InvalidXml;
+            const end = std.mem.findScalarPos(u8, self.xml, self.index + 1, '>') orelse return error.InvalidXml;
             var raw = std.mem.trim(u8, self.xml[self.index + 1 .. end], " \t\r\n");
             const self_closing = raw.len > 0 and raw[raw.len - 1] == '/';
             if (self_closing) raw = std.mem.trim(u8, raw[0 .. raw.len - 1], " \t\r\n");
@@ -698,7 +704,7 @@ fn tagName(tag: []const u8) []const u8 {
 }
 
 fn replaceOnce(allocator: std.mem.Allocator, input: []const u8, needle: []const u8, replacement: []const u8) ![]const u8 {
-    const index = std.mem.indexOf(u8, input, needle) orelse return error.MissingTemplateToken;
+    const index = std.mem.find(u8, input, needle) orelse return error.MissingTemplateToken;
     var out: std.ArrayList(u8) = .empty;
     errdefer out.deinit(allocator);
     try out.appendSlice(allocator, input[0..index]);
@@ -741,7 +747,7 @@ fn formatDate(allocator: std.mem.Allocator, iso: []const u8) ![]const u8 {
         12 => "December",
         else => return error.InvalidDate,
     };
-    return std.fmt.allocPrint(allocator, "{s} {}, {s}", .{ month, day_num, year });
+    return allocator.print("{s} {}, {s}", .{ month, day_num, year });
 }
 
 fn codepointCount(bytes: []const u8) !usize {
@@ -814,7 +820,7 @@ fn ansiToHtml(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
     var i: usize = 0;
     while (i < input.len) {
         if (input[i] == 0x1b and i + 1 < input.len and input[i + 1] == '[') {
-            const end = std.mem.indexOfScalarPos(u8, input, i + 2, 'm') orelse {
+            const end = std.mem.findScalarPos(u8, input, i + 2, 'm') orelse {
                 i += 1;
                 continue;
             };
@@ -880,13 +886,13 @@ fn appendAnsiSpan(allocator: std.mem.Allocator, out: *std.ArrayList(u8), char: [
     try out.appendSlice(allocator, "<span style='");
     if (style.fg) |fg| {
         const color = colorRgb(fg, style.bright);
-        const style_text = try std.fmt.allocPrint(allocator, "color: rgba({}, {}, {}, 1.0);", .{ color[0], color[1], color[2] });
+        const style_text = try allocator.print("color: rgba({}, {}, {}, 1.0);", .{ color[0], color[1], color[2] });
         defer allocator.free(style_text);
         try out.appendSlice(allocator, style_text);
     }
     if (style.bg) |bg| {
         const color = colorRgb(bg, style.bright);
-        const style_text = try std.fmt.allocPrint(allocator, "background-color: rgba({}, {}, {}, 1.0);", .{ color[0], color[1], color[2] });
+        const style_text = try allocator.print("background-color: rgba({}, {}, {}, 1.0);", .{ color[0], color[1], color[2] });
         defer allocator.free(style_text);
         try out.appendSlice(allocator, style_text);
     }
